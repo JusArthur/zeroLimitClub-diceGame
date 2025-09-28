@@ -27,6 +27,73 @@
     text-align: center;
   }
   
+  /* 俱乐部Logo样式 */
+  .club-logo {
+    margin-bottom: 20px;
+  }
+  
+  .logo-circle {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    border: 3px solid #gold;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .logo-circle::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: logoShine 3s infinite;
+  }
+  
+  .logo-text {
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    z-index: 1;
+    position: relative;
+  }
+  
+  /* Logo动画 */
+  @keyframes logoShine {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* 商标样式 */
+  .club-trademark {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .trademark-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0 0 8px 0;
+    font-weight: 500;
+  }
+  
+  .club-slogan {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 0;
+    font-style: italic;
+  }
+  
   .main-title {
     font-size: 32px;
     font-weight: bold;
@@ -112,6 +179,45 @@
     max-width: 1152px;
     width: 100%;
     text-align: center;
+  }
+  
+  /* 游戏页面Logo */
+  .game-logo {
+    margin-bottom: 16px;
+  }
+  
+  .logo-circle-small {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+    border: 2px solid #gold;
+  }
+  
+  .logo-text-small {
+    color: white;
+    font-weight: bold;
+    font-size: 8px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  
+  /* 游戏底部 */
+  .game-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .footer-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+    font-weight: 500;
   }
   
   .game-header {
@@ -308,6 +414,15 @@
     border-radius: 50%;
   }
   
+  /* 中国骰子特色：1点和4点是红色 */
+  .face-front .dot {
+    background: #dc2626; /* 1点红色 */
+  }
+  
+  .face-left .dot {
+    background: #dc2626; /* 4点红色 */
+  }
+  
   /* === 动画 === */
   @keyframes rollDice {
     0% { 
@@ -347,7 +462,17 @@
     }
     
     .main-title, .game-title {
-      font-size: 24px;
+      font-size: 20px;
+    }
+    
+    .logo-image {
+      width: 80px;
+      height: 80px;
+    }
+    
+    .logo-image-small {
+      width: 50px;
+      height: 50px;
     }
     
     .dice-area {

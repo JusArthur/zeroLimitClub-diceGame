@@ -1,70 +1,176 @@
-# Getting Started with Create React App
+# 🎲 Zero Limit Breakthrough Club - Mid-Autumn Festival 3D Dice Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🏮 Event Introduction
 
-## Available Scripts
+Welcome to the **Zero Limit Breakthrough Club** Mid-Autumn Festival Gaming Support Event! This is a custom 3D dice game designed specifically for the Mid-Autumn Festival, combining traditional Chinese dice elements with modern 3D technology to provide an immersive gaming experience for club members and friends.
 
-In the project directory, you can run:
+## ✨ Game Features
 
-### `npm start`
+### 🎯 Core Functions
+- **Flexible Dice Selection**: Support for 1-6 dice rolling simultaneously
+- **Realistic 3D Effects**: Each die rotates authentically in 3D space
+- **Traditional Chinese Style**: Dots 1 and 4 feature traditional red coloring
+- **Immersive Animation**: 2.5-second rotation with individual delay for each die
+- **Real-time Scoring**: Automatic calculation and display of total points
+- **Responsive Design**: Perfect experience on both desktop and mobile devices
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🎨 Visual Design
+- **Club Branding**: Official Zero Limit Breakthrough Club logo integration
+- **Festive Theme**: Mid-Autumn Festival special edition styling
+- **Modern UI**: Gradient backgrounds and smooth animations
+- **Professional Layout**: Clean, intuitive interface design
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📱 Device Compatibility
 
-### `npm test`
+### 💻 Desktop Experience
+- **Full 3D Effects**: Complete CSS 3D transformations
+- **Large Display**: 100px club logo and optimal dice size
+- **Hover Interactions**: Enhanced button feedback
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 📱 Mobile Experience
+- **Touch Optimized**: Finger-friendly button sizes
+- **Responsive Layout**: Automatic screen size adaptation
+- **3D Performance**: Smooth animations on mobile browsers
+- **Portrait/Landscape**: Optimized for both orientations
 
-### `npm run build`
+## 🚀 Quick Start
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn package manager
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Installation
+```bash
+# Clone the repository
+git clone [your-repository-url]
+cd dice-game
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Install dependencies
+npm install
 
-### `npm run eject`
+# Start development server
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Mobile Access
+1. Start the development server with `npm start`
+2. Find the network address (usually shown as `On Your Network: http://192.168.x.x:3000`)
+3. Connect your mobile device to the same WiFi network
+4. Open the network address in your mobile browser
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🎮 How to Play
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Step 1: Select Dice Quantity
+- Choose from 1 to 6 dice using the selection grid
+- See real-time feedback of your selection
+- Click "Start Game" to proceed
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Step 2: Roll the Dice
+- Click the "Roll Dice" button to start the 3D animation
+- Watch each die rotate independently in 3D space
+- Wait for the 2.5-second animation to complete
 
-## Learn More
+### Step 3: View Results
+- See individual die results with traditional Chinese styling
+- View the total score automatically calculated
+- Roll again or return to change the number of dice
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🏗️ Technical Architecture
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Frontend Framework
+- **React 18+**: Modern React with Hooks
+- **Pure CSS**: No external CSS frameworks, fully custom styling
+- **CSS 3D Transforms**: Hardware-accelerated 3D animations
+- **Responsive Design**: Mobile-first approach
 
-### Code Splitting
+### Key Components
+- **DiceGame.jsx**: Main game component with state management
+- **Dice3D**: Individual 3D dice component with rotation logic
+- **DiceGame.css**: Complete styling with 3D effects and animations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### File Structure
+```
+src/
+├── DiceGame.jsx          # Main game component
+├── DiceGame.css          # Complete styling
+├── pic/
+│   └── logo.png         # Club logo image
+└── App.js               # Application entry point
+```
 
-### Analyzing the Bundle Size
+## 🎨 Customization
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Brand Elements
+- **Logo**: Replace `src/pic/logo.png` with your organization's logo
+- **Colors**: Modify CSS custom properties for brand colors
+- **Text**: Update club name and slogans in component files
 
-### Making a Progressive Web App
+### Game Mechanics
+- **Dice Count**: Modify the range in the number selection array
+- **Animation Duration**: Adjust timeout values in `rollDice()` function
+- **Dice Faces**: Customize dot patterns in `getDotPattern()` function
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 🌐 Deployment Options
 
-### Advanced Configuration
+### Development
+```bash
+npm start                 # Local development with hot reload
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Production Build
+```bash
+npm run build            # Creates optimized production build
+```
 
-### Deployment
+### Deployment Platforms
+- **Netlify**: Drag-and-drop deployment from build folder
+- **Vercel**: GitHub integration with automatic deployments  
+- **GitHub Pages**: Free hosting for static sites
+- **Custom Server**: Deploy build folder to any web server
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🎯 Zero Limit Breakthrough Club
 
-### `npm run build` fails to minify
+### About the Club
+Zero Limit Breakthrough Club is dedicated to pushing boundaries and creating unlimited possibilities. This Mid-Autumn Festival gaming event represents our commitment to innovation while honoring traditional culture.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Event Goals
+- **Community Building**: Bring members together through interactive gaming
+- **Cultural Celebration**: Honor Mid-Autumn Festival traditions
+- **Technology Showcase**: Demonstrate modern web technologies
+- **Member Engagement**: Provide entertaining and memorable experiences
+
+## 📄 License & Credits
+
+### Copyright
+© 2024 Zero Limit Breakthrough Club. All rights reserved.
+
+### Slogan
+"突破极限，创造无限可能" (Breaking Limits, Creating Infinite Possibilities)
+
+### Special Thanks
+- Mid-Autumn Festival Special Edition
+- Developed for Zero Limit Breakthrough Club Gaming Support Event
+- Traditional Chinese dice styling inspiration
+
+## 🤝 Contributing
+
+We welcome contributions from club members and the community:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+For technical support or questions about the Mid-Autumn Festival gaming event:
+
+- **Club Website**: [Your club website]
+- **Event Coordinator**: [Contact information]
+- **Technical Issues**: [Technical support contact]
+
+---
+
+**Happy Mid-Autumn Festival! 🥮**  
+*Zero Limit Breakthrough Club - Mid-Autumn Gaming Support Event*

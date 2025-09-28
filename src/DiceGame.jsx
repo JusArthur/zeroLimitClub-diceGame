@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './DiceGame.css'; // 需要引入CSS文件
+import logo from './pic/logo.png'; // 导入本地logo图片
 
 const DiceGame = () => {
   const [step, setStep] = useState('select');
@@ -40,7 +41,11 @@ const DiceGame = () => {
     return (
       <div className="app-container">
         <div className="select-container">
-          <h1 className="main-title">🎲 3D骰子游戏</h1>
+          {/* 俱乐部Logo */}
+          <div className="club-logo">
+            <img src={logo} alt="零界突破俱乐部" className="logo-image" />
+          </div>
+          <h1 className="main-title">🎲 中秋庆典-零界突破俱乐部</h1>
           
           <div className="select-section">
             <h2 className="section-title">选择骰子数量</h2>
@@ -67,22 +72,32 @@ const DiceGame = () => {
           >
             开始游戏 🎮
           </button>
+          
+          {/* 俱乐部商标 */}
+          <div className="club-trademark">
+            <p className="trademark-text">© 2025 零界突破俱乐部 | Zero Limit Breakthrough Club</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="app-container">
-      <div className="game-container">
-        <div className="game-header">
+    return (
+      <div className="app-container">
+        <div className="game-container">
+          {/* 游戏页面Logo */}
+          <div className="game-logo">
+            <img src={logo} alt="零界突破俱乐部" className="logo-image-small" />
+          </div>
+          
+          <div className="game-header">
           <button
             onClick={goBack}
             className="back-btn"
           >
             ← 返回
           </button>
-          <h1 className="game-title">🎲 3D骰子游戏</h1>
+          <h1 className="game-title">🎲 中秋庆典-零界突破俱乐部</h1>
           <div className="spacer"></div>
         </div>
 
@@ -114,9 +129,14 @@ const DiceGame = () => {
 
         {isRolling && (
           <div className="rolling-status">
-            <p className="rolling-text">骰子正在3D旋转...</p>
+            <p className="rolling-text">摇骰子中...</p>
           </div>
         )}
+        
+        {/* 游戏页面底部商标 */}
+        <div className="game-footer">
+          <p className="footer-text">Zero Limit Breakthrough Club - 中秋庆典特别版</p>
+        </div>
       </div>
     </div>
   );
