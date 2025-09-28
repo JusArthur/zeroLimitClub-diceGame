@@ -9,6 +9,7 @@ const DiceGame = () => {
   const [isRolling, setIsRolling] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyCollapsed, setHistoryCollapsed] = useState(true);
 
   // cookie 工具函数
   const setCookie = (name, value, days) => {
@@ -219,11 +220,11 @@ const DiceGame = () => {
       setGameResult(result);
 
       // 保存历史记录
-      setHistory(prev => [
+      setHistory((prev) => [
         ...prev,
-        { values: finalValues, result, time: new Date().toLocaleString() }
+        { values: finalValues, result, time: new Date().toLocaleString() },
       ]);
-      
+
       setIsRolling(false);
     }, 2500);
   };
@@ -238,6 +239,8 @@ const DiceGame = () => {
   const startGame = () => {
     setStep("game");
   };
+  
+  const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
   if (step === "select") {
     return (
@@ -372,49 +375,56 @@ const DiceGame = () => {
           </div>
         )}
 
-{isRolling && (
-        <div className="rolling-status">
-          <p className="rolling-text">买定离手...</p>
-        </div>
-      )}
+        {/* ===== collapsible history window (renders only when history exists) ===== */}
+        {history.length > 0 && (
+          <div className={`history-window ${historyCollapsed ? "collapsed" : "expanded"}`} role="region" aria-label="History">
+            {/* toggle button (always visible) */}
+            <button
+              className="history-toggle-btn"
+              onClick={toggleHistoryWindow}
+              aria-expanded={!historyCollapsed}
+              aria-label={historyCollapsed ? `Open history (${history.length})` : "Collapse history"}
+            >
+              {historyCollapsed ? `📜 ${history.length}` : "📜"}
+            </button>
 
-      {/* ===== 新增 历史记录查看 ===== */}
-      {history.length > 0 && (
-        <div className="history-section">
-          <h3 className="history-title">📜 历史记录</h3>
-          <ul className="history-list">
-            {history
-              .slice() // 拷贝
-              .reverse() // 倒序显示
-              .map((item, idx) => (
-                <li key={idx} className="history-item">
-                  <span className="history-time">{item.time}</span> ——{" "}
-                  <span
-                    className="history-result"
-                    style={{ color: item.result?.color || "#000" }}
-                  >
-                    {item.result?.name || "无奖"}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
-      {/* ===== 历史记录结束 ===== */}
+            {/* expanded content */}
+            {!historyCollapsed && (
+              <div className="history-content" aria-live="polite">
+                <div className="history-header">
+                  <h3 className="history-title">📜 历史记录</h3>
+                  <div className="history-actions">
+                    <button className="history-collapse-btn" onClick={toggleHistoryWindow} title="Collapse">−</button>
+                  </div>
+                </div>
 
-      {/* 游戏页面底部商标 */}
-      <div className="game-footer">
-        <p className="footer-text">
-          Zero Limit Breakthrough Club - 中秋博饼庆典特别版
-        </p>
-        {diceCount === 6 && (
-          <p className="bo-game-hint">🥮 传统博饼游戏模式 🥮</p>
+                <ul className="history-list">
+                  {history
+                    .slice()
+                    .reverse()
+                    .map((item, idx) => (
+                      <li key={idx} className="history-item">
+                        <span className="history-time">{item.time}</span> —{" "}
+                        <span className="history-result" style={{ color: item.result?.color || "#000" }}>
+                          {item.result?.name || "无奖"}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
+        {/* ===== end history window ===== */}
+
+        <div className="game-footer">
+          <p className="footer-text">Zero Limit Breakthrough Club - 中秋博饼庆典特别版</p>
+          {diceCount === 6 && <p className="bo-game-hint">🥮 传统博饼游戏模式 🥮</p>}
+        </div>
       </div>
     </div>
-  </div>
-);
-}
+  );
+};
 
 // 3D骰子组件
 const Dice3D = ({ value, isRolling, delay = 0 }) => {
