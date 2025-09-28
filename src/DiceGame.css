@@ -414,115 +414,117 @@
   animation: pulse 1s infinite;
 }
 
-/* === 3D骰子样式 === */
-.dice-container {
-  perspective: 400px;
-  display: inline-block;
+/* === 3D骰子样式（替换原有该部分） === */
+
+:root {
+  --dice-size: 80px;   /* change this once to scale whole dice */
+  --dot-size: 8px;
 }
 
+/* container */
+.dice-container {
+  perspective: 800px;
+  display: inline-block;
+  margin: 8px;
+}
+
+/* cube */
 .dice-cube {
   transform-style: preserve-3d;
-  width: 80px;
-  height: 80px;
+  width: var(--dice-size);
+  height: var(--dice-size);
   position: relative;
-  margin: 20px auto;
+  margin: 0;
   transition: transform 0.6s ease-out;
+  transform-origin: center center;
+  will-change: transform;
+  --half-size: calc(var(--dice-size) / 2);
 }
 
+/* rolling animation (kept similar to yours) */
 .dice-cube.cube-rolling {
-  animation: rollDice 2.5s ease-in-out infinite;
+  animation: rollDice 2.5s ease-in-out;
 }
 
+/* faces */
 .dice-face {
   position: absolute;
-  width: 80px;
-  height: 80px;
+  width: var(--dice-size);
+  height: var(--dice-size);
   background: white;
   border: 2px solid #1f2937;
   border-radius: 8px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.face-front { 
-  transform: rotateY(0deg) translateZ(40px); 
-}
-.face-back { 
-  transform: rotateY(180deg) translateZ(40px); 
-}
-.face-right { 
-  transform: rotateY(90deg) translateZ(40px); 
-}
-.face-left { 
-  transform: rotateY(-90deg) translateZ(40px); 
-}
-.face-top { 
-  transform: rotateX(90deg) translateZ(40px); 
-}
-.face-bottom { 
-  transform: rotateX(-90deg) translateZ(40px); 
-}
+/* place faces using half-size variable */
+.face-front  { transform: rotateY(0deg)   translateZ(var(--half-size)); }
+.face-back   { transform: rotateY(180deg) translateZ(var(--half-size)); }
+.face-right  { transform: rotateY(90deg)  translateZ(var(--half-size)); }
+.face-left   { transform: rotateY(-90deg) translateZ(var(--half-size)); }
+.face-top    { transform: rotateX(90deg)  translateZ(var(--half-size)); }
+.face-bottom { transform: rotateX(-90deg) translateZ(var(--half-size)); }
 
+/* center a smaller grid inside each face so dots never touch edges */
 .dots-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   height: 100%;
-  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
+/* 3x3 grid for dot positions — reliable and works with your .dot-position wrapper */
 .dots-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  width: 100%;
-  height: 100%;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  width: 70%;   /* <-- controls how "tight" the pip layout sits inside the face */
+  height: 70%;
 }
 
+/* each cell centers its dot (or is empty) */
 .dot-position {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 16px;
 }
 
+/* dot */
 .dot {
-  width: 8px;
-  height: 8px;
+  width: var(--dot-size);
+  height: var(--dot-size);
   background: #1f2937;
   border-radius: 50%;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.15);
 }
 
-/* 中国骰子特色：1点和4点是红色 */
-.face-front .dot {
-  background: #dc2626; /* 1点红色 */
-}
-
+/* Chinese dice convention — 1 and 4 are red */
+/* face-front holds the single-dot (1) and face-left holds the 4-dot face in your mapping */
+.face-front .dot,
 .face-left .dot {
-  background: #dc2626; /* 4点红色 */
+  background: #dc2626;
 }
 
-/* === 动画 === */
+/* small layout niceties */
+.dice-container, .dice-cube { -webkit-transform-style: preserve-3d; transform-style: preserve-3d; }
+
+/* animations */
 @keyframes rollDice {
-  0% { 
-    transform: rotateX(0deg) rotateY(0deg); 
-  }
-  25% { 
-    transform: rotateX(360deg) rotateY(180deg); 
-  }
-  50% { 
-    transform: rotateX(720deg) rotateY(360deg); 
-  }
-  75% { 
-    transform: rotateX(1080deg) rotateY(540deg); 
-  }
-  100% { 
-    transform: rotateX(1440deg) rotateY(720deg); 
-  }
+  0%   { transform: rotateX(0deg)    rotateY(0deg); }
+  25%  { transform: rotateX(360deg)  rotateY(180deg); }
+  50%  { transform: rotateX(720deg)  rotateY(360deg); }
+  75%  { transform: rotateX(1080deg) rotateY(540deg); }
+  100% { transform: rotateX(1440deg) rotateY(720deg); }
 }
+
 
 @keyframes pulse {
   0%, 100% { 
