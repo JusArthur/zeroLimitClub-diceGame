@@ -88,19 +88,22 @@ const checkBoResult = (values) => {
 
   const rollDice = () => {
     if (isRolling) return;
-    
+  
     setIsRolling(true);
-    setGameResult(null); // 清除之前的结果
-    
-    // 2.5秒后停止并显示最终结果
+    setGameResult(null);
+  
+    // 先生成随机结果（不直接赋值，等动画时间结束后再应用）
+    const finalValues = Array(diceCount)
+      .fill(0)
+      .map(() => Math.floor(Math.random() * 6) + 1);
+  
     setTimeout(() => {
-      const finalValues = Array(diceCount).fill(0).map(() => Math.floor(Math.random() * 6) + 1);
       setDiceValues(finalValues);
-      
+  
       // 检查博饼结果
       const result = checkBoResult(finalValues);
       setGameResult(result);
-      
+  
       setIsRolling(false);
     }, 2500);
   };
@@ -280,12 +283,12 @@ const Dice3D = ({ value, isRolling, delay = 0 }) => {
 
   const getDiceFinalRotation = (value) => {
     const rotations = {
-      1: 'rotateX(0deg) rotateY(0deg)',        // 正面
-      2: 'rotateX(-90deg) rotateY(0deg)',      // 顶面  
-      3: 'rotateX(0deg) rotateY(90deg)',       // 右面
-      4: 'rotateX(0deg) rotateY(-90deg)',      // 左面
-      5: 'rotateX(90deg) rotateY(0deg)',       // 底面
-      6: 'rotateX(0deg) rotateY(180deg)'       // 背面
+      1: 'rotateX(0deg) rotateY(0deg)',        // 1点（正面）
+      2: 'rotateX(-90deg) rotateY(0deg)',      // 2点（顶部）
+      3: 'rotateX(0deg) rotateY(90deg)',       // 3点（左面）
+      4: 'rotateX(0deg) rotateY(-90deg)',      // 4点（右面）
+      5: 'rotateX(90deg) rotateY(0deg)',       // 5点（底部）
+      6: 'rotateX(0deg) rotateY(180deg)'       // 6点（背面）
     };
     return rotations[value] || rotations[1];
   };
