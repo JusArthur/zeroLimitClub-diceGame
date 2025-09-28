@@ -7,6 +7,78 @@ const DiceGame = () => {
   const [diceCount, setDiceCount] = useState(1);
   const [diceValues, setDiceValues] = useState([]);
   const [isRolling, setIsRolling] = useState(false);
+  const [gameResult, setGameResult] = useState(null);
+
+// 博饼游戏规则判断
+const checkBoResult = (values) => {
+  if (values.length !== 6) return null; // 只有6个骰子才能玩博饼
+
+  const counts = {};
+  values.forEach(val => {
+    counts[val] = (counts[val] || 0) + 1;
+  });
+
+  // 按优先级从高到低判断
+
+  // 红六勃：6个4
+  if (counts[4] === 6) {
+    return { name: '红六勃', level: 10, description: '六个四，最高奖！', color: '#dc2626' };
+  }
+
+  // 遍地锦：6个1
+  if (counts[1] === 6) {
+    return { name: '遍地锦', level: 9, description: '六个一，极品奖！', color: '#dc2626' };
+  }
+
+  // 黑六勃：6个2
+  if (counts[2] === 6) {
+    return { name: '黑六勃', level: 8, description: '六个二，稀有奖！', color: '#1f2937' };
+  }
+
+  // 插金花：4个4 + 2个1
+  if (counts[4] === 4 && counts[1] === 2) {
+    return { name: '插金花', level: 7, description: '四个四加两个一，特殊奖！', color: '#f59e0b' };
+  }
+
+  // 五红：5个4
+  if (counts[4] === 5) {
+    return { name: '五红', level: 6, description: '五个四，大奖！', color: '#dc2626' };
+  }
+
+  // 四红：4个4
+  if (counts[4] === 4) {
+    return { name: '四红', level: 5, description: '四个四，很好！', color: '#dc2626' };
+  }
+
+  // 榜眼：123456顺子
+  const hasAllNumbers = [1, 2, 3, 4, 5, 6].every(num => counts[num] === 1);
+  if (hasAllNumbers) {
+    return { name: '榜眼', level: 4, description: '123456顺子，优秀！', color: '#7c3aed' };
+  }
+
+  // 探花：3个4
+  if (counts[4] === 3) {
+    return { name: '探花', level: 3, description: '三个四，不错！', color: '#dc2626' };
+  }
+
+  // 进士：4个2
+  if (counts[2] === 4) {
+    return { name: '进士', level: 2, description: '四个二，好运！', color: '#1f2937' };
+  }
+
+  // 举人：2个4
+  if (counts[4] === 2) {
+    return { name: '举人', level: 1, description: '两个四，还行！', color: '#dc2626' };
+  }
+
+  // 秀才：1个4
+  if (counts[4] === 1) {
+    return { name: '秀才', level: 0, description: '一个四，起步！', color: '#dc2626' };
+  }
+
+  // 无奖
+  return { name: '无奖', level: -1, description: '再试试！', color: '#6b7280' };
+};
 
   useEffect(() => {
     if (step === 'game') {
@@ -18,11 +90,17 @@ const DiceGame = () => {
     if (isRolling) return;
     
     setIsRolling(true);
+    setGameResult(null); // 清除之前的结果
     
     // 2.5秒后停止并显示最终结果
     setTimeout(() => {
       const finalValues = Array(diceCount).fill(0).map(() => Math.floor(Math.random() * 6) + 1);
       setDiceValues(finalValues);
+      
+      // 检查博饼结果
+      const result = checkBoResult(finalValues);
+      setGameResult(result);
+      
       setIsRolling(false);
     }, 2500);
   };
@@ -31,6 +109,7 @@ const DiceGame = () => {
     setStep('select');
     setDiceValues([]);
     setIsRolling(false);
+    setGameResult(null); // 清除游戏结果
   };
 
   const startGame = () => {
@@ -49,6 +128,9 @@ const DiceGame = () => {
           
           <div className="select-section">
             <h2 className="section-title">选择骰子数量</h2>
+            <div className="game-mode-hint">
+              <p>💡 选择6个骰子可以玩传统博饼游戏！</p>
+            </div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map(num => (
                 <button
@@ -75,7 +157,8 @@ const DiceGame = () => {
           
           {/* 俱乐部商标 */}
           <div className="club-trademark">
-            <p className="trademark-text">© 2025 零界突破俱乐部 | Zero Limit Breakthrough Club</p>
+            <p className="trademark-text">© 2024 零界突破俱乐部 | Zero Limit Breakthrough Club</p>
+            <p className="club-slogan">突破极限，创造无限可能</p>
           </div>
         </div>
       </div>
@@ -116,6 +199,21 @@ const DiceGame = () => {
             <p className="total-text">
               总点数: <span className="total-number">{diceValues.reduce((a, b) => a + b, 0)}</span>
             </p>
+            
+            {/* 博饼游戏结果 */}
+            {gameResult && (
+              <div className="bo-result" style={{ borderColor: gameResult.color }}>
+                <div className="result-header">
+                  <h3 className="result-name" style={{ color: gameResult.color }}>
+                    🎉 {gameResult.name}
+                  </h3>
+                  <div className="result-level">等级 {gameResult.level}</div>
+                </div>
+                <p className="result-description">{gameResult.description}</p>
+                {gameResult.name === '红六勃' && <div className="celebration">🎊 恭喜获得最高奖！ 🎊</div>}
+                {gameResult.name === '遍地锦' && <div className="celebration">✨ 极品奖励！ ✨</div>}
+              </div>
+            )}
           </div>
         )}
 
@@ -129,13 +227,16 @@ const DiceGame = () => {
 
         {isRolling && (
           <div className="rolling-status">
-            <p className="rolling-text">摇骰子中...</p>
+            <p className="rolling-text">骰子正在3D旋转...</p>
           </div>
         )}
         
         {/* 游戏页面底部商标 */}
         <div className="game-footer">
-          <p className="footer-text">Zero Limit Breakthrough Club - 中秋庆典特别版</p>
+          <p className="footer-text">Zero Limit Breakthrough Club - 中秋博饼庆典特别版</p>
+          {diceCount === 6 && (
+            <p className="bo-game-hint">🥮 传统博饼游戏模式 🥮</p>
+          )}
         </div>
       </div>
     </div>
