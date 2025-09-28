@@ -42,7 +42,7 @@
     justify-content: center;
     margin: 0 auto;
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-    border: 3px solid #gold;
+    border: 3px solid gold;
     position: relative;
     overflow: hidden;
   }
@@ -196,7 +196,7 @@
     justify-content: center;
     margin: 0 auto;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
-    border: 2px solid #gold;
+    border: 2px solid gold;
   }
   
   .logo-text-small {
