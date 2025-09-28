@@ -237,7 +237,7 @@ return { name: '无奖', level: -1, description: '未中佳手，再接再厉！
 
         {isRolling && (
           <div className="rolling-status">
-            <p className="rolling-text">骰子正在3D旋转...</p>
+            <p className="rolling-text">买定离手...</p>
           </div>
         )}
         
