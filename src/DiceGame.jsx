@@ -246,12 +246,12 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
-  const clearHistory = () => {
-    if (window.confirm("确定要清空所有历史记录吗?")) {
-      setHistory([]);
-      localStorage.removeItem("diceHistory");
-    }
-  };
+  // const clearHistory = () => {
+  //   if (window.confirm("确定要清空所有历史记录吗?")) {
+  //     setHistory([]);
+  //     localStorage.removeItem("diceHistory");
+  //   }
+  // };
 
   if (step === "select") {
     return (
