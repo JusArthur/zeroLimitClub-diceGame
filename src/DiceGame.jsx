@@ -198,8 +198,9 @@ const DiceGame = () => {
 
   // 每次历史更新时保存
   useEffect(() => {
-    if (history.length > 0) {
-      setCookie("diceHistory", JSON.stringify(history), 7); // 保存 7 天
+    // 仅在博饼模式下保存历史
+    if (diceCount === 6 && history.length > 0) {
+    setCookie("diceHistory", JSON.stringify(history), 7); // 保存 7 天
     }
   }, [history]);
 
@@ -226,10 +227,11 @@ const DiceGame = () => {
       setGameResult(result);
 
       // 保存历史记录
-      setHistory((prev) => [
+      if (diceCount === 6)
+      {setHistory((prev) => [
         ...prev,
         { values: finalValues, result, time: new Date().toLocaleString() },
-      ]);
+      ])};
 
       setIsRolling(false);
     }, 2500);
@@ -382,7 +384,7 @@ const DiceGame = () => {
         )}
 
         {/* ===== collapsible history window (renders only when history exists) ===== */}
-        {history.length > 0 && (
+        {diceCount === 6 && history.length > 0 && (
           <div
             className={`history-window ${
               historyCollapsed ? "collapsed" : "expanded"
