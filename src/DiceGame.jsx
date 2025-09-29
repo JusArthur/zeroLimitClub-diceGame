@@ -41,7 +41,7 @@ const DiceGame = () => {
     // 红六勃：6个4
     if (counts[4] === 6) {
       return {
-        name: "红六勃",
+        name: "状元·六杯红",
         level: 10,
         description: "六个四，状元及第，至尊荣耀！",
         color: "#dc2626",
@@ -51,27 +51,28 @@ const DiceGame = () => {
     // 遍地锦：6个1
     if (counts[1] === 6) {
       return {
-        name: "遍地锦",
+        name: "状元·遍地锦",
         level: 9,
         description: "六个一，状元及第，极致稀有！",
         color: "#dc2626",
       };
     }
 
-    // 黑六勃：6个2
-    if (counts[2] === 6) {
-      return {
-        name: "黑六勃",
-        level: 8,
-        description: "六个二，状元及第，独一无二！",
-        color: "#1f2937",
-      };
+    // 黑六勃：6个相同
+    for (let i of [2, 3, 5, 6]) {
+      if (counts[i] === 6) {
+        return {
+          name: "状元·黑六勃",
+          level: 8,
+          description: "六子同辉，状元及第，独步天下！",
+          color: "#1f2937",
+        };
+      }
     }
-
     // 插金花：4个4 + 2个1
     if (counts[4] === 4 && counts[1] === 2) {
       return {
-        name: "插金花",
+        name: "状元·插金花",
         level: 7,
         description: "四个四加两个一，状元及第，锦上添花！",
         color: "#f59e0b",
@@ -81,27 +82,29 @@ const DiceGame = () => {
     // 五红：5个4
     if (counts[4] === 5) {
       return {
-        name: "五红",
+        name: "状元·五红",
         level: 6,
         description: "五个四，状元及第，鸿运当头！",
         color: "#dc2626",
       };
     }
 
-    // 五子登科：5个2
-    if (counts[2] === 5) {
-      return {
-        name: "五子",
-        level: 6,
-        description: "五个二，状元及第，五子登科！",
-        color: "#dc2626",
-      };
+    // 五子登科：5个相同
+    for (let i of [1, 2, 3, 5, 6]) {
+      if (counts[i] === 5) {
+        return {
+          name: "状元·五子登科",
+          level: 6,
+          description: "五子同科，状元及第，喜气盈门！",
+          color: "#dc2626",
+        };
+      }
     }
 
     // 四红：4个4
     if (counts[4] === 4) {
       return {
-        name: "四红",
+        name: "状元·四红",
         level: 5,
         description: "四个四，状元及第，运势非凡！",
         color: "#dc2626",
@@ -129,16 +132,17 @@ const DiceGame = () => {
       };
     }
 
-    // 进士：4个2
-    if (counts[2] === 4) {
-      return {
-        name: "进士",
-        level: 2,
-        description: "四个二，才学兼备，进士及第！",
-        color: "#1f2937",
-      };
+    // 进士：4个相同
+    for (let i of [1, 2, 3, 5, 6]) {
+      if (counts[i] === 4) {
+        return {
+          name: "进士",
+          level: 2,
+          description: "四子齐聚，才学兼备，进士及第！",
+          color: "#1f2937",
+        };
+      }
     }
-
     // 举人：2个4
     if (counts[4] === 2) {
       return {
@@ -210,8 +214,10 @@ const DiceGame = () => {
       .fill(0)
       .map(() => Math.floor(Math.random() * 6) + 1);
 
-    // const finalValues = [1,1,1,1,1,1]; // 测试博饼结果用
-
+    // const finalValues = [5,5,5,5,5,5]; // 测试博饼结果用
+    // const finalValues = [4,4,4,4,1,1]; 
+    // const finalValues = [4,4,4,4,1,1];
+    // const finalValues = [5,5,5,5,5,5]
     setTimeout(() => {
       setDiceValues(finalValues);
 
@@ -239,7 +245,7 @@ const DiceGame = () => {
   const startGame = () => {
     setStep("game");
   };
-  
+
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
   if (step === "select") {
@@ -350,10 +356,10 @@ const DiceGame = () => {
                   <div className="result-level">等级 {gameResult.level}</div>
                 </div>
                 <p className="result-description">{gameResult.description}</p>
-                {gameResult.name === "红六勃" && (
+                {gameResult.name === "状元·六杯红" && (
                   <div className="celebration">🎊 恭喜高中状元！ 🎊</div>
                 )}
-                {gameResult.name === "插金花" && (
+                {gameResult.name === "状元·插金花" && (
                   <div className="celebration">✨ 极品奖励！ ✨</div>
                 )}
               </div>
@@ -377,13 +383,23 @@ const DiceGame = () => {
 
         {/* ===== collapsible history window (renders only when history exists) ===== */}
         {history.length > 0 && (
-          <div className={`history-window ${historyCollapsed ? "collapsed" : "expanded"}`} role="region" aria-label="History">
+          <div
+            className={`history-window ${
+              historyCollapsed ? "collapsed" : "expanded"
+            }`}
+            role="region"
+            aria-label="History"
+          >
             {/* toggle button (always visible) */}
             <button
               className="history-toggle-btn"
               onClick={toggleHistoryWindow}
               aria-expanded={!historyCollapsed}
-              aria-label={historyCollapsed ? `Open history (${history.length})` : "Collapse history"}
+              aria-label={
+                historyCollapsed
+                  ? `Open history (${history.length})`
+                  : "Collapse history"
+              }
             >
               {historyCollapsed ? `📜 ${history.length}` : "📜"}
             </button>
@@ -394,7 +410,13 @@ const DiceGame = () => {
                 <div className="history-header">
                   <h3 className="history-title">📜 历史记录</h3>
                   <div className="history-actions">
-                    <button className="history-collapse-btn" onClick={toggleHistoryWindow} title="Collapse">−</button>
+                    <button
+                      className="history-collapse-btn"
+                      onClick={toggleHistoryWindow}
+                      title="Collapse"
+                    >
+                      −
+                    </button>
                   </div>
                 </div>
 
@@ -405,7 +427,10 @@ const DiceGame = () => {
                     .map((item, idx) => (
                       <li key={idx} className="history-item">
                         <span className="history-time">{item.time}</span> —{" "}
-                        <span className="history-result" style={{ color: item.result?.color || "#000" }}>
+                        <span
+                          className="history-result"
+                          style={{ color: item.result?.color || "#000" }}
+                        >
                           {item.result?.name || "无奖"}
                         </span>
                       </li>
@@ -418,8 +443,12 @@ const DiceGame = () => {
         {/* ===== end history window ===== */}
 
         <div className="game-footer">
-          <p className="footer-text">Zero Limit Breakthrough Club - 中秋博饼庆典特别版</p>
-          {diceCount === 6 && <p className="bo-game-hint">🥮 传统博饼游戏模式 🥮</p>}
+          <p className="footer-text">
+            Zero Limit Breakthrough Club - 中秋博饼庆典特别版
+          </p>
+          {diceCount === 6 && (
+            <p className="bo-game-hint">🥮 传统博饼游戏模式 🥮</p>
+          )}
         </div>
       </div>
     </div>
