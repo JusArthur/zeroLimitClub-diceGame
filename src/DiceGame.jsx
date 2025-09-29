@@ -212,8 +212,12 @@ const DiceGame = () => {
 
     // 先生成随机结果（不直接赋值，等动画时间结束后再应用）
     const finalValues = Array(diceCount)
-      .fill(0)
-      .map(() => Math.floor(Math.random() * 6) + 1);
+    .fill(0)
+    .map(() => {
+      const randomBytes = new Uint32Array(1);
+      crypto.getRandomValues(randomBytes);
+      return (randomBytes[0] % 6) + 1;
+    });
 
     // const finalValues = [5,5,5,5,5,5]; // 测试博饼结果用
     // const finalValues = [4,4,4,4,1,1]; 
