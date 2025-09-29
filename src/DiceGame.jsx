@@ -202,7 +202,7 @@ const DiceGame = () => {
     if (diceCount === 6 && history.length > 0) {
     setCookie("diceHistory", JSON.stringify(history), 7); // 保存 7 天
     }
-  }, [history]);
+  }, [history, diceCount]);
 
   const rollDice = () => {
     if (isRolling) return;
