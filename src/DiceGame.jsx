@@ -11,20 +11,23 @@ const DiceGame = () => {
   const [history, setHistory] = useState([]);
   const [historyCollapsed, setHistoryCollapsed] = useState(true);
 
-  // cookie 工具函数
-  const setCookie = (name, value, days) => {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${encodeURIComponent(
-      value
-    )};expires=${expires.toUTCString()};path=/`;
+  // localStorage 工具函数(替代 cookie)
+  const saveToStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error("保存失败:", e);
+    }
   };
 
-  const getCookie = (name) => {
-    const match = document.cookie.match(
-      new RegExp("(^| )" + name + "=([^;]+)")
-    );
-    return match ? decodeURIComponent(match[2]) : null;
+  const getFromStorage = (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (e) {
+      console.error("读取失败:", e);
+      return null;
+    }
   };
 
   // 博饼游戏规则判断
@@ -43,7 +46,7 @@ const DiceGame = () => {
       return {
         name: "状元·六杯红",
         level: 10,
-        description: "六个四，状元及第，至尊荣耀！",
+        description: "六个四,状元及第,至尊荣耀!",
         color: "#dc2626",
       };
     }
@@ -53,7 +56,7 @@ const DiceGame = () => {
       return {
         name: "状元·遍地锦",
         level: 9,
-        description: "六个一，状元及第，极致稀有！",
+        description: "六个一,状元及第,极致稀有!",
         color: "#dc2626",
       };
     }
@@ -64,7 +67,7 @@ const DiceGame = () => {
         return {
           name: "状元·黑六勃",
           level: 8,
-          description: "六子同辉，状元及第，独步天下！",
+          description: "六子同辉,状元及第,独步天下!",
           color: "#1f2937",
         };
       }
@@ -74,7 +77,7 @@ const DiceGame = () => {
       return {
         name: "状元·插金花",
         level: 7,
-        description: "四个四加两个一，状元及第，锦上添花！",
+        description: "四个四加两个一,状元及第,锦上添花!",
         color: "#f59e0b",
       };
     }
@@ -84,7 +87,7 @@ const DiceGame = () => {
       return {
         name: "状元·五红",
         level: 6,
-        description: "五个四，状元及第，鸿运当头！",
+        description: "五个四,状元及第,鸿运当头!",
         color: "#dc2626",
       };
     }
@@ -95,7 +98,7 @@ const DiceGame = () => {
         return {
           name: "状元·五子登科",
           level: 6,
-          description: "五子同科，状元及第，喜气盈门！",
+          description: "五子同科,状元及第,喜气盈门!",
           color: "#dc2626",
         };
       }
@@ -106,7 +109,7 @@ const DiceGame = () => {
       return {
         name: "状元·四红",
         level: 5,
-        description: "四个四，状元及第，运势非凡！",
+        description: "四个四,状元及第,运势非凡!",
         color: "#dc2626",
       };
     }
@@ -117,7 +120,7 @@ const DiceGame = () => {
       return {
         name: "榜眼",
         level: 4,
-        description: "顺子齐聚，才华横溢，榜眼之选！",
+        description: "顺子齐聚,才华横溢,榜眼之选!",
         color: "#7c3aed",
       };
     }
@@ -127,7 +130,7 @@ const DiceGame = () => {
       return {
         name: "探花",
         level: 3,
-        description: "三个四，风华出众，探花之姿！",
+        description: "三个四,风华出众,探花之姿!",
         color: "#dc2626",
       };
     }
@@ -138,7 +141,7 @@ const DiceGame = () => {
         return {
           name: "进士",
           level: 2,
-          description: "四子齐聚，才学兼备，进士及第！",
+          description: "四子齐聚,才学兼备,进士及第!",
           color: "#1f2937",
         };
       }
@@ -148,7 +151,7 @@ const DiceGame = () => {
       return {
         name: "举人",
         level: 1,
-        description: "两个四，实力不凡，稳入举人！",
+        description: "两个四,实力不凡,稳入举人!",
         color: "#dc2626",
       };
     }
@@ -158,7 +161,7 @@ const DiceGame = () => {
       return {
         name: "秀才",
         level: 0,
-        description: "一个四，初露锋芒，秀才入门！",
+        description: "一个四,初露锋芒,秀才入门!",
         color: "#dc2626",
       };
     }
@@ -167,7 +170,7 @@ const DiceGame = () => {
     return {
       name: "无奖",
       level: -1,
-      description: "未中佳手，再接再厉！",
+      description: "未中佳手,再接再厉!",
       color: "#6b7280",
     };
   };
@@ -178,21 +181,11 @@ const DiceGame = () => {
     }
   }, [step, diceCount]);
 
-  useEffect(() => {
-    if (step === "game") {
-      setDiceValues(Array(diceCount).fill(1));
-    }
-  }, [step, diceCount]);
-
   // 页面加载时恢复历史
   useEffect(() => {
-    const saved = getCookie("diceHistory");
+    const saved = getFromStorage("diceHistory");
     if (saved) {
-      try {
-        setHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error("历史记录解析失败:", e);
-      }
+      setHistory(saved);
     }
   }, []);
 
@@ -200,7 +193,7 @@ const DiceGame = () => {
   useEffect(() => {
     // 仅在博饼模式下保存历史
     if (diceCount === 6 && history.length > 0) {
-    setCookie("diceHistory", JSON.stringify(history), 7); // 保存 7 天
+      saveToStorage("diceHistory", history);
     }
   }, [history, diceCount]);
 
@@ -210,19 +203,17 @@ const DiceGame = () => {
     setIsRolling(true);
     setGameResult(null);
 
-    // 先生成随机结果（不直接赋值，等动画时间结束后再应用）
+    // 先生成随机结果(不直接赋值,等动画时间结束后再应用)
     const finalValues = Array(diceCount)
-    .fill(0)
-    .map(() => {
-      const randomBytes = new Uint32Array(1);
-      crypto.getRandomValues(randomBytes);
-      return (randomBytes[0] % 6) + 1;
-    });
+      .fill(0)
+      .map(() => {
+        const randomBytes = new Uint32Array(1);
+        crypto.getRandomValues(randomBytes);
+        return (randomBytes[0] % 6) + 1;
+      });
 
     // const finalValues = [5,5,5,5,5,5]; // 测试博饼结果用
     // const finalValues = [4,4,4,4,1,1]; 
-    // const finalValues = [4,4,4,4,1,1];
-    // const finalValues = [5,5,5,5,5,5]
     setTimeout(() => {
       setDiceValues(finalValues);
 
@@ -231,11 +222,12 @@ const DiceGame = () => {
       setGameResult(result);
 
       // 保存历史记录
-      if (diceCount === 6)
-      {setHistory((prev) => [
-        ...prev,
-        { values: finalValues, result, time: new Date().toLocaleString() },
-      ])};
+      if (diceCount === 6) {
+        setHistory((prev) => [
+          ...prev,
+          { values: finalValues, result, time: new Date().toLocaleString() },
+        ]);
+      }
 
       setIsRolling(false);
     }, 2500);
@@ -254,6 +246,13 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
+  const clearHistory = () => {
+    if (window.confirm("确定要清空所有历史记录吗?")) {
+      setHistory([]);
+      localStorage.removeItem("diceHistory");
+    }
+  };
+
   if (step === "select") {
     return (
       <div className="app-container">
@@ -267,7 +266,7 @@ const DiceGame = () => {
           <div className="select-section">
             <h2 className="section-title">选择骰子数量</h2>
             <div className="game-mode-hint">
-              <p>💡 选择6个骰子可以玩传统博饼游戏！</p>
+              <p>💡 选择6个骰子可以玩传统博饼游戏!</p>
             </div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -297,7 +296,7 @@ const DiceGame = () => {
             <p className="trademark-text">
               © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
             </p>
-            <p className="club-slogan">突破极限，创造无限可能</p>
+            <p className="club-slogan">突破极限,创造无限可能</p>
           </div>
         </div>
       </div>
@@ -363,10 +362,10 @@ const DiceGame = () => {
                 </div>
                 <p className="result-description">{gameResult.description}</p>
                 {gameResult.name === "状元·六杯红" && (
-                  <div className="celebration">🎊 恭喜高中状元！ 🎊</div>
+                  <div className="celebration">🎊 恭喜高中状元! 🎊</div>
                 )}
                 {gameResult.name === "状元·插金花" && (
-                  <div className="celebration">✨ 极品奖励！ ✨</div>
+                  <div className="celebration">✨ 极品奖励! ✨</div>
                 )}
               </div>
             )}
@@ -416,10 +415,17 @@ const DiceGame = () => {
                 <div className="history-header">
                   <h3 className="history-title">📜 历史记录</h3>
                   <div className="history-actions">
+                    {/* <button
+                      className="history-clear-btn"
+                      onClick={clearHistory}
+                      title="清空历史"
+                    >
+                      🗑️
+                    </button> */}
                     <button
                       className="history-collapse-btn"
                       onClick={toggleHistoryWindow}
-                      title="Collapse"
+                      title="收起"
                     >
                       −
                     </button>
