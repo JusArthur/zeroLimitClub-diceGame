@@ -203,17 +203,17 @@ const DiceGame = () => {
     setIsRolling(true);
     setGameResult(null);
 
-    // // 先生成随机结果(不直接赋值,等动画时间结束后再应用)
-    // const finalValues = Array(diceCount)
-    //   .fill(0)
-    //   .map(() => {
-    //     const randomBytes = new Uint32Array(1);
-    //     crypto.getRandomValues(randomBytes);
-    //     return (randomBytes[0] % 6) + 1;
-    //   });
+    // 先生成随机结果(不直接赋值,等动画时间结束后再应用)
+    const finalValues = Array(diceCount)
+      .fill(0)
+      .map(() => {
+        const randomBytes = new Uint32Array(1);
+        crypto.getRandomValues(randomBytes);
+        return (randomBytes[0] % 6) + 1;
+      });
 
     // const finalValues = [5,5,5,5,5,5]; // 测试博饼结果用
-    const finalValues = [2,3,4,5,1,6]; 
+    // const finalValues = [2,3,4,5,1,6]; 
     setTimeout(() => {
       setDiceValues(finalValues);
 
