@@ -265,12 +265,13 @@ const DiceGame = () => {
           <div className="club-logo">
             <img src={logo} alt="零界突破俱乐部" className="logo-image" />
           </div>
-          <h1 className="main-title">🎲 中秋庆典-零界突破俱乐部</h1>
+          <h1 className="main-title">🎲🎴零界突破俱乐部</h1>
 
           <div className="select-section">
-            <h2 className="section-title">选择骰子数量</h2>
+            <h2 className="section-title">选择游戏类型</h2>
             <div className="game-mode-hint">
-              <p>💡 选择6个骰子可以玩传统博饼游戏!</p>
+            <p>💡 6个骰子 = 传统博饼游戏</p>
+            <p>🃏 5个骰子 = 牛牛扑克游戏</p>
             </div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map((num) => (
