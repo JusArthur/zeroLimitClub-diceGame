@@ -269,7 +269,7 @@ const DiceGame = () => {
             <img src={logo} alt="零界突破俱乐部" className="logo-image" />
           </div>
           <h1 className="main-title">🎲 零界突破俱乐部</h1>
-          <h1 className="main-title">游戏中心</h1>
+          <h1 className="main-title">🎮 游戏中心</h1>
 
           <div className="select-section">
             <h2 className="section-title">选择游戏模式</h2>
