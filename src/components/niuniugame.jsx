@@ -383,9 +383,7 @@ const NiuNiuGame = ({ onBack }) => {
         <button onClick={onBack} style={styles.backBtn}>
           ← 返回
         </button>
-        <button onClick={clearHistory} style={styles.clearHistoryBtn}>
-            清除历史
-          </button>
+
         <h1 style={styles.title}>🃏 牛牛游戏</h1>
         <div style={styles.spacer}></div>
       </div>
@@ -436,7 +434,9 @@ const NiuNiuGame = ({ onBack }) => {
 
         {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
       </div>
-
+      <button onClick={clearHistory} style={styles.clearHistoryBtn}>
+            清除历史
+          </button>
       <HistoryRecord history={history} styles={styles} />
     </div>
   );
