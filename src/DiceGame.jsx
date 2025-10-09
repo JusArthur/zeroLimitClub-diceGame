@@ -292,7 +292,7 @@ const DiceGame = () => {
                 }}
               >
                 🃏 牛牛游戏
-                <p className="mode-desc">5个骰子 · 牛牛扑克模式</p>
+                <p className="mode-desc">5张扑克 · 牛牛扑克模式</p>
               </button>
 
               <button className="mode-box" onClick={() => setStep("select")}>
@@ -334,7 +334,6 @@ const DiceGame = () => {
             <h2 className="section-title">选择游戏类型</h2>
             <div className="game-mode-hint">
             <p>💡 6个骰子 = 传统博饼游戏</p>
-            <p>🃏 5个骰子 = 牛牛扑克游戏</p>
             </div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -352,8 +351,7 @@ const DiceGame = () => {
           </div>
 
           <div className="selected-info">
-            <p>              已选择: {diceCount} 个{diceCount === 5 ? "扑克" : "骰子"}
-              {diceCount === 5 && " - 牛牛模式"}
+            <p>              已选择: {diceCount} 个骰子
               {diceCount === 6 && " - 博饼模式"}</p>
           </div>
 
