@@ -283,7 +283,7 @@ const NiuNiuGame = ({ onBack }) => {
     }, 2000);
   };
 
-  // 页面加载时初始化
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCards(Array(5).fill(0).map(generateRandomCard));
   }, []);
