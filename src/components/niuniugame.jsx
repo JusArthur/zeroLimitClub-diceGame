@@ -8,12 +8,45 @@ const NiuNiuGame = ({ onBack }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [history, setHistory] = useState([]);
+  // Local storage utility functions
+  const saveToStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error("保存失败:", e);
+    }
+  };
+
+  const getFromStorage = (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (e) {
+      console.error("读取失败:", e);
+      return null;
+    }
+  };
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    const saved = getFromStorage("niuNiuHistory");
+    if (saved) {
+      setHistory(saved);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it updates
+  useEffect(() => {
+    if (history.length > 0) {
+      saveToStorage("niuNiuHistory", history);
+    }
+  }, [history]);
 
   // 可调节的概率配置 (0-1之间，越小越稀有)
   const RARE_PROBABILITIES = {
-    wuHuaNiu: 0.30,    // 五花牛 0.01%
-    wuXiaoNiu: 0.40,  // 五小牛 0.01%
-    zhaDan: 0.20,      // 炸弹 0.01%
+    wuHuaNiu: 0.3, // 五花牛 0.01%
+    wuXiaoNiu: 0.4, // 五小牛 0.01%
+    zhaDan: 0.2, // 炸弹 0.01%
   };
 
   // 扑克牌花色和点数
@@ -37,7 +70,21 @@ const NiuNiuGame = ({ onBack }) => {
 
   // 生成一张随机牌
   const generateRandomCard = () => {
-    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const ranks = [
+      "A",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "J",
+      "Q",
+      "K",
+    ];
     const randomSuit = suits[Math.floor(Math.random() * suits.length)];
     const randomRank = ranks[Math.floor(Math.random() * ranks.length)];
     return { suit: randomSuit, rank: randomRank };
@@ -54,37 +101,39 @@ const NiuNiuGame = ({ onBack }) => {
 
     const values = cardHand.map(getCardValue);
     const allFlowers = cardHand.every(isFlowerCard);
-    const allSmall = cardHand.every(c => getCardValue(c) <= 5);
-    
+    const allSmall = cardHand.every((c) => getCardValue(c) <= 5);
+
     // 检查炸弹
     const rankCounts = {};
-    cardHand.forEach(card => {
+    cardHand.forEach((card) => {
       rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
     });
-    const hasBomb = Object.values(rankCounts).some(count => count === 4);
-    
+    const hasBomb = Object.values(rankCounts).some((count) => count === 4);
+
     if (hasBomb) return true;
-    
+
     // 检查五小牛
     if (allSmall && values.reduce((a, b) => a + b, 0) <= 10) return true;
-    
+
     // 检查五花牛
     if (allFlowers) return true;
-    
+
     // 检查牛牛
     for (let i = 0; i < 3; i++) {
       for (let j = i + 1; j < 4; j++) {
         for (let k = j + 1; k < 5; k++) {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
-            const remaining = values.filter((_, idx) => idx !== i && idx !== j && idx !== k);
+            const remaining = values.filter(
+              (_, idx) => idx !== i && idx !== j && idx !== k
+            );
             const niuValue = (remaining[0] + remaining[1]) % 10;
             if (niuValue === 0) return true; // 发现牛牛
           }
         }
       }
     }
-    
+
     return false;
   };
 
@@ -92,54 +141,83 @@ const NiuNiuGame = ({ onBack }) => {
   const generateNormalCards = () => {
     let attempts = 0;
     const maxAttempts = 100; // 防止无限循环
-    
+
     while (attempts < maxAttempts) {
       const cards = Array(5).fill(0).map(generateRandomCard);
-      
+
       if (!isSpecialCardType(cards)) {
         return cards;
       }
-      
+
       attempts++;
     }
-    
+
     // 如果100次都生成特殊牌，返回最后一组（极小概率）
     return Array(5).fill(0).map(generateRandomCard);
   };
 
   // 生成特定牌型
   const generateSpecialHand = (type) => {
-    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-    
-    switch(type) {
+    const ranks = [
+      "A",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "J",
+      "Q",
+      "K",
+    ];
+
+    switch (type) {
       case "zhaDan": // 炸弹：4张相同
         const bombRank = ranks[Math.floor(Math.random() * ranks.length)];
-        const bombCards = suits.slice(0, 4).map(suit => ({ suit, rank: bombRank }));
+        const bombCards = suits
+          .slice(0, 4)
+          .map((suit) => ({ suit, rank: bombRank }));
         const fifthCard = generateRandomCard();
         return [...bombCards, fifthCard];
-        
+
+      // 生成特定牌型 - 修改 wuXiaoNiu
       case "wuXiaoNiu": // 五小牛：5张牌都小于5且总和≤10
         const smallRanks = ["A", "2", "3", "4"];
-        const wuXiaoCards = [];
-        let total = 0;
-        for (let i = 0; i < 5; i++) {
-          let card;
-          do {
-            const rank = smallRanks[Math.floor(Math.random() * smallRanks.length)];
-            card = { suit: suits[Math.floor(Math.random() * suits.length)], rank };
-          } while (total + getCardValue(card) > 10);
-          total += getCardValue(card);
-          wuXiaoCards.push(card);
+        let attempts = 0;
+        const maxAttempts = 100; // 防止极端随机无限（虽概率极低）
+        while (attempts < maxAttempts) {
+          const wuXiaoCards = [];
+          let total = 0;
+          for (let i = 0; i < 5; i++) {
+            const rank =
+              smallRanks[Math.floor(Math.random() * smallRanks.length)];
+            const suit = suits[Math.floor(Math.random() * suits.length)];
+            const value = getCardValue({ rank });
+            wuXiaoCards.push({ suit, rank });
+            total += value;
+          }
+          if (total <= 10) {
+            return wuXiaoCards; // 满足条件，直接返回
+          }
+          attempts++;
         }
-        return wuXiaoCards;
-        
+        // 如果重试失败，返回一个默认（或抛错），但实际不会发生
+        return Array(5)
+          .fill(0)
+          .map(() => ({ suit: suits[0], rank: "A" })); // 默认全A
+
       case "wuHuaNiu": // 五花牛：5张都是JQK
         const flowerRanks = ["J", "Q", "K"];
-        return Array(5).fill(0).map(() => ({
-          suit: suits[Math.floor(Math.random() * suits.length)],
-          rank: flowerRanks[Math.floor(Math.random() * flowerRanks.length)]
-        }));
-        
+        return Array(5)
+          .fill(0)
+          .map(() => ({
+            suit: suits[Math.floor(Math.random() * suits.length)],
+            rank: flowerRanks[Math.floor(Math.random() * flowerRanks.length)],
+          }));
+
       default:
         return null;
     }
@@ -151,14 +229,14 @@ const NiuNiuGame = ({ onBack }) => {
 
     const values = cardHand.map(getCardValue);
     const allFlowers = cardHand.every(isFlowerCard);
-    const allSmall = cardHand.every(c => getCardValue(c) <= 5);
-    
+    const allSmall = cardHand.every((c) => getCardValue(c) <= 5);
+
     // 检查炸弹（4张相同）
     const rankCounts = {};
-    cardHand.forEach(card => {
+    cardHand.forEach((card) => {
       rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
     });
-    const hasBomb = Object.values(rankCounts).some(count => count === 4);
+    const hasBomb = Object.values(rankCounts).some((count) => count === 4);
 
     if (hasBomb) {
       return {
@@ -166,7 +244,7 @@ const NiuNiuGame = ({ onBack }) => {
         level: 10,
         multiplier: "x8",
         description: "四张相同！威力无穷！",
-        color: "#dc2626"
+        color: "#dc2626",
       };
     }
 
@@ -177,7 +255,7 @@ const NiuNiuGame = ({ onBack }) => {
         level: 9,
         multiplier: "x7",
         description: "小牌大智慧！",
-        color: "#f59e0b"
+        color: "#f59e0b",
       };
     }
 
@@ -188,13 +266,13 @@ const NiuNiuGame = ({ onBack }) => {
         level: 8,
         multiplier: "x6",
         description: "满堂花开！",
-        color: "#7c3aed"
+        color: "#7c3aed",
       };
     }
 
     // 尝试所有组合找牛
     let bestNiu = null;
-    
+
     // 遍历所有3张牌的组合
     for (let i = 0; i < 3; i++) {
       for (let j = i + 1; j < 4; j++) {
@@ -202,9 +280,11 @@ const NiuNiuGame = ({ onBack }) => {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
             // 找到了可以凑成10的倍数
-            const remaining = values.filter((_, idx) => idx !== i && idx !== j && idx !== k);
+            const remaining = values.filter(
+              (_, idx) => idx !== i && idx !== j && idx !== k
+            );
             const niuValue = (remaining[0] + remaining[1]) % 10;
-            
+
             if (!bestNiu || niuValue > bestNiu.value) {
               bestNiu = { value: niuValue, combo: [i, j, k] };
             }
@@ -223,7 +303,7 @@ const NiuNiuGame = ({ onBack }) => {
           level: allFlowersInNiu ? 7 : 6,
           multiplier: allFlowersInNiu ? "x5" : "x4",
           description: allFlowersInNiu ? "花牌牛牛，锦上添花！" : "完美组合！",
-          color: allFlowersInNiu ? "#ec4899" : "#059669"
+          color: allFlowersInNiu ? "#ec4899" : "#059669",
         };
       } else {
         return {
@@ -231,7 +311,7 @@ const NiuNiuGame = ({ onBack }) => {
           level: niuNum,
           multiplier: niuNum >= 7 ? `x${niuNum - 5}` : "x1",
           description: niuNum >= 7 ? "大牛来了！" : "小有收获！",
-          color: niuNum >= 7 ? "#059669" : "#6b7280"
+          color: niuNum >= 7 ? "#059669" : "#6b7280",
         };
       }
     }
@@ -241,7 +321,7 @@ const NiuNiuGame = ({ onBack }) => {
       level: 0,
       multiplier: "x0",
       description: "再接再厉！",
-      color: "#9ca3af"
+      color: "#9ca3af",
     };
   };
 
@@ -254,7 +334,7 @@ const NiuNiuGame = ({ onBack }) => {
 
     // 根据概率决定是否生成特殊牌型
     let finalCards;
-    
+
     if (shouldTriggerRare(RARE_PROBABILITIES.zhaDan)) {
       finalCards = generateSpecialHand("zhaDan");
     } else if (shouldTriggerRare(RARE_PROBABILITIES.wuXiaoNiu)) {
@@ -271,20 +351,23 @@ const NiuNiuGame = ({ onBack }) => {
       const result = checkNiuNiuResult(finalCards);
       setGameResult(result);
 
-      setHistory(prev => [
-        ...prev,
-        { 
-          cards: finalCards, 
-          result, 
-          time: new Date().toLocaleString() 
-        }
-      ]);
+      setHistory((prev) => {
+        const newHistory = [
+          ...prev,
+          {
+            cards: finalCards,
+            result,
+            time: new Date().toLocaleString(),
+          },
+        ];
+        return newHistory;
+      });
 
       setIsRolling(false);
     }, 2000);
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCards(Array(5).fill(0).map(generateRandomCard));
   }, []);
@@ -307,7 +390,7 @@ const NiuNiuGame = ({ onBack }) => {
               style={{
                 ...styles.card,
                 ...(isRolling ? styles.cardRolling : {}),
-                animationDelay: `${index * 100}ms`
+                animationDelay: `${index * 100}ms`,
               }}
             >
               <div style={{ ...styles.cardSuit, color: suitColors[card.suit] }}>
@@ -338,19 +421,16 @@ const NiuNiuGame = ({ onBack }) => {
           disabled={isRolling}
           style={{
             ...styles.rollBtn,
-            ...(isRolling ? styles.rollBtnDisabled : {})
+            ...(isRolling ? styles.rollBtnDisabled : {}),
           }}
         >
           {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
         </button>
 
-        {isRolling && (
-          <div style={styles.rollingStatus}>买定离手...</div>
-        )}
+        {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
       </div>
 
       <HistoryRecord history={history} styles={styles} />
-
     </div>
   );
 };
@@ -360,14 +440,14 @@ const styles = {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
     padding: "20px",
-    fontFamily: "system-ui, -apple-system, sans-serif"
+    fontFamily: "system-ui, -apple-system, sans-serif",
   },
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: "30px",
-    gap: "15px"
+    gap: "15px",
   },
   backBtn: {
     padding: "10px 20px",
@@ -377,22 +457,22 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
-    transition: "all 0.3s"
+    transition: "all 0.3s",
   },
   title: {
     fontSize: "28px",
     color: "#fff",
     margin: 0,
     textAlign: "center",
-    flex: 1
+    flex: 1,
   },
   spacer: {
-    width: "100px"
+    width: "100px",
   },
   gameArea: {
     maxWidth: "800px",
     margin: "0 auto",
-    textAlign: "center"
+    textAlign: "center",
   },
   cardsContainer: {
     display: "flex",
@@ -400,7 +480,7 @@ const styles = {
     gap: "15px",
     flexWrap: "wrap",
     marginBottom: "30px",
-    minHeight: "180px"
+    minHeight: "180px",
   },
   card: {
     width: "120px",
@@ -413,19 +493,19 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    transition: "transform 0.3s"
+    transition: "transform 0.3s",
   },
   cardRolling: {
-    animation: "cardFlip 0.5s ease-in-out infinite"
+    animation: "cardFlip 0.5s ease-in-out infinite",
   },
   cardSuit: {
     fontSize: "40px",
     fontWeight: "bold",
-    marginBottom: "8px"
+    marginBottom: "8px",
   },
   cardRank: {
     fontSize: "32px",
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   resultBox: {
     backgroundColor: "rgba(255,255,255,0.95)",
@@ -434,18 +514,18 @@ const styles = {
     margin: "30px auto",
     maxWidth: "500px",
     border: "3px solid",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
   },
   resultName: {
     fontSize: "32px",
     fontWeight: "bold",
-    margin: "0 0 15px 0"
+    margin: "0 0 15px 0",
   },
   resultDetails: {
     display: "flex",
     justifyContent: "center",
     gap: "20px",
-    marginBottom: "15px"
+    marginBottom: "15px",
   },
   multiplier: {
     fontSize: "24px",
@@ -453,7 +533,7 @@ const styles = {
     color: "#059669",
     backgroundColor: "#d1fae5",
     padding: "5px 15px",
-    borderRadius: "20px"
+    borderRadius: "20px",
   },
   level: {
     fontSize: "16px",
@@ -462,12 +542,12 @@ const styles = {
     padding: "5px 15px",
     borderRadius: "20px",
     display: "flex",
-    alignItems: "center"
+    alignItems: "center",
   },
   description: {
     fontSize: "18px",
     color: "#4b5563",
-    margin: 0
+    margin: 0,
   },
   rollBtn: {
     padding: "18px 50px",
@@ -479,19 +559,19 @@ const styles = {
     borderRadius: "12px",
     cursor: "pointer",
     transition: "all 0.3s",
-    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)"
+    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)",
   },
   rollBtnDisabled: {
     backgroundColor: "#6b7280",
     cursor: "not-allowed",
-    opacity: 0.7
+    opacity: 0.7,
   },
   rollingStatus: {
     marginTop: "20px",
     fontSize: "20px",
     color: "#fbbf24",
     fontWeight: "bold",
-    animation: "pulse 1s ease-in-out infinite"
+    animation: "pulse 1s ease-in-out infinite",
   },
   historySection: {
     maxWidth: "600px",
@@ -499,17 +579,17 @@ const styles = {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: "12px",
     padding: "20px",
-    backdropFilter: "blur(10px)"
+    backdropFilter: "blur(10px)",
   },
   historyTitle: {
     color: "#fff",
     fontSize: "20px",
-    marginBottom: "15px"
+    marginBottom: "15px",
   },
   historyList: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px"
+    gap: "10px",
   },
   historyItem: {
     display: "flex",
@@ -517,14 +597,14 @@ const styles = {
     padding: "12px",
     backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: "8px",
-    fontSize: "14px"
+    fontSize: "14px",
   },
   historyTime: {
-    color: "#6b7280"
+    color: "#6b7280",
   },
   historyResult: {
-    fontWeight: "bold"
-  }
+    fontWeight: "bold",
+  },
 };
 
 // 添加CSS动画
