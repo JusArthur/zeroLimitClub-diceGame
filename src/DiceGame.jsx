@@ -235,9 +235,11 @@ const DiceGame = () => {
   };
 
   const goBack = () => {
-    if (diceCount === 5 || diceCount === 6) {
+    if (diceCount === 6) {
       setStep("menu");
-    } else {
+    } else if (step === "niuniu") {
+      setStep("menu");
+    } else{
       setStep("select");
     }
     setDiceValues([]);
@@ -251,9 +253,6 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
-  if (step === "game" && diceCount === 5) {
-    return <NiuNiuGame onBack={goBack} />;
-  }
   // const clearHistory = () => {
   //   if (window.confirm("确定要清空所有历史记录吗?")) {
   //     setHistory([]);
@@ -261,7 +260,7 @@ const DiceGame = () => {
   //   }
   // };
   // --- 主菜单界面 ---
-  
+
   if (step === "menu") {
     return (
       <div className="app-container">
@@ -289,7 +288,7 @@ const DiceGame = () => {
                 className="mode-box"
                 onClick={() => {
                   setDiceCount(5);
-                  setStep("game");
+                  setStep("niuniu");
                 }}
               >
                 🃏 牛牛游戏
@@ -318,6 +317,13 @@ const DiceGame = () => {
     return (
       <div className="app-container">
         <div className="select-container">
+      {/* 返回按钮 */}
+        <button
+          onClick={() => setStep("menu")}
+          className="back-btn"
+        >
+          ← 返回主菜单
+        </button>
           {/* 俱乐部Logo */}
           <div className="club-logo">
             <img src={logo} alt="零界突破俱乐部" className="logo-image" />
@@ -366,7 +372,9 @@ const DiceGame = () => {
       </div>
     );
   }
-
+  if (step === "niuniu") {
+    return <NiuNiuGame onBack={goBack} />;
+  }
   return (
     <div className="app-container">
       <div className="game-container">
