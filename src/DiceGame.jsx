@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./DiceGame.css"; // 需要引入CSS文件
 import logo from "./pic/logo.png"; // 导入本地logo图片
+import NiuNiuGame from "./components/niuniugame";
 
 const DiceGame = () => {
   const [step, setStep] = useState("select");
@@ -246,6 +247,9 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
+  if (step === "game" && diceCount === 5) {
+    return <NiuNiuGame onBack={goBack} />;
+  }
   // const clearHistory = () => {
   //   if (window.confirm("确定要清空所有历史记录吗?")) {
   //     setHistory([]);
@@ -284,7 +288,9 @@ const DiceGame = () => {
           </div>
 
           <div className="selected-info">
-            <p>已选择: {diceCount} 个骰子</p>
+            <p>              已选择: {diceCount} 个{diceCount === 5 ? "扑克" : "骰子"}
+              {diceCount === 5 && " - 牛牛模式"}
+              {diceCount === 6 && " - 博饼模式"}</p>
           </div>
 
           <button onClick={startGame} className="start-btn">

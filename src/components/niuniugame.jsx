@@ -1,0 +1,543 @@
+import React, { useState, useEffect } from "react";
+import HistoryRecord from "./HistoryRecord";
+
+// 牛牛游戏组件
+const NiuNiuGame = ({ onBack }) => {
+  const [cards, setCards] = useState([]);
+  const [isRolling, setIsRolling] = useState(false);
+  const [gameResult, setGameResult] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  // 可调节的概率配置 (0-1之间，越小越稀有)
+  const RARE_PROBABILITIES = {
+    wuHuaNiu: 0.30,    // 五花牛 0.01%
+    wuXiaoNiu: 0.40,  // 五小牛 0.01%
+    zhaDan: 0.20,      // 炸弹 0.01%
+  };
+
+  // 扑克牌花色和点数
+  const suits = ["♠", "♥", "♦", "♣"];
+  const suitColors = {
+    "♠": "#000",
+    "♥": "#dc2626",
+    "♦": "#dc2626",
+    "♣": "#000",
+  };
+
+  // 获取牌面值
+  const getCardValue = (card) => {
+    if (card.rank === "A") return 1;
+    if (["J", "Q", "K"].includes(card.rank)) return 10;
+    return parseInt(card.rank);
+  };
+
+  // 检查是否为花牌
+  const isFlowerCard = (card) => ["J", "Q", "K"].includes(card.rank);
+
+  // 生成一张随机牌
+  const generateRandomCard = () => {
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const randomSuit = suits[Math.floor(Math.random() * suits.length)];
+    const randomRank = ranks[Math.floor(Math.random() * ranks.length)];
+    return { suit: randomSuit, rank: randomRank };
+  };
+
+  // 根据概率决定是否触发稀有牌型
+  const shouldTriggerRare = (probability) => {
+    return Math.random() < probability;
+  };
+
+  // 检测是否为特殊牌型（用于过滤普通生成）
+  const isSpecialCardType = (cardHand) => {
+    if (cardHand.length !== 5) return false;
+
+    const values = cardHand.map(getCardValue);
+    const allFlowers = cardHand.every(isFlowerCard);
+    const allSmall = cardHand.every(c => getCardValue(c) <= 5);
+    
+    // 检查炸弹
+    const rankCounts = {};
+    cardHand.forEach(card => {
+      rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
+    });
+    const hasBomb = Object.values(rankCounts).some(count => count === 4);
+    
+    if (hasBomb) return true;
+    
+    // 检查五小牛
+    if (allSmall && values.reduce((a, b) => a + b, 0) <= 10) return true;
+    
+    // 检查五花牛
+    if (allFlowers) return true;
+    
+    // 检查牛牛
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = values[i] + values[j] + values[k];
+          if (sum % 10 === 0) {
+            const remaining = values.filter((_, idx) => idx !== i && idx !== j && idx !== k);
+            const niuValue = (remaining[0] + remaining[1]) % 10;
+            if (niuValue === 0) return true; // 发现牛牛
+          }
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // 生成普通牌（确保不是特殊牌型）
+  const generateNormalCards = () => {
+    let attempts = 0;
+    const maxAttempts = 100; // 防止无限循环
+    
+    while (attempts < maxAttempts) {
+      const cards = Array(5).fill(0).map(generateRandomCard);
+      
+      if (!isSpecialCardType(cards)) {
+        return cards;
+      }
+      
+      attempts++;
+    }
+    
+    // 如果100次都生成特殊牌，返回最后一组（极小概率）
+    return Array(5).fill(0).map(generateRandomCard);
+  };
+
+  // 生成特定牌型
+  const generateSpecialHand = (type) => {
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    
+    switch(type) {
+      case "zhaDan": // 炸弹：4张相同
+        const bombRank = ranks[Math.floor(Math.random() * ranks.length)];
+        const bombCards = suits.slice(0, 4).map(suit => ({ suit, rank: bombRank }));
+        const fifthCard = generateRandomCard();
+        return [...bombCards, fifthCard];
+        
+      case "wuXiaoNiu": // 五小牛：5张牌都小于5且总和≤10
+        const smallRanks = ["A", "2", "3", "4"];
+        const wuXiaoCards = [];
+        let total = 0;
+        for (let i = 0; i < 5; i++) {
+          let card;
+          do {
+            const rank = smallRanks[Math.floor(Math.random() * smallRanks.length)];
+            card = { suit: suits[Math.floor(Math.random() * suits.length)], rank };
+          } while (total + getCardValue(card) > 10);
+          total += getCardValue(card);
+          wuXiaoCards.push(card);
+        }
+        return wuXiaoCards;
+        
+      case "wuHuaNiu": // 五花牛：5张都是JQK
+        const flowerRanks = ["J", "Q", "K"];
+        return Array(5).fill(0).map(() => ({
+          suit: suits[Math.floor(Math.random() * suits.length)],
+          rank: flowerRanks[Math.floor(Math.random() * flowerRanks.length)]
+        }));
+        
+      default:
+        return null;
+    }
+  };
+
+  // 检查牛牛结果
+  const checkNiuNiuResult = (cardHand) => {
+    if (cardHand.length !== 5) return null;
+
+    const values = cardHand.map(getCardValue);
+    const allFlowers = cardHand.every(isFlowerCard);
+    const allSmall = cardHand.every(c => getCardValue(c) <= 5);
+    
+    // 检查炸弹（4张相同）
+    const rankCounts = {};
+    cardHand.forEach(card => {
+      rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
+    });
+    const hasBomb = Object.values(rankCounts).some(count => count === 4);
+
+    if (hasBomb) {
+      return {
+        name: "炸弹",
+        level: 10,
+        multiplier: "x8",
+        description: "四张相同！威力无穷！",
+        color: "#dc2626"
+      };
+    }
+
+    // 五小牛：都小于5且总和≤10
+    if (allSmall && values.reduce((a, b) => a + b, 0) <= 10) {
+      return {
+        name: "五小牛",
+        level: 9,
+        multiplier: "x7",
+        description: "小牌大智慧！",
+        color: "#f59e0b"
+      };
+    }
+
+    // 五花牛：全是JQK
+    if (allFlowers) {
+      return {
+        name: "五花牛",
+        level: 8,
+        multiplier: "x6",
+        description: "满堂花开！",
+        color: "#7c3aed"
+      };
+    }
+
+    // 尝试所有组合找牛
+    let bestNiu = null;
+    
+    // 遍历所有3张牌的组合
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = values[i] + values[j] + values[k];
+          if (sum % 10 === 0) {
+            // 找到了可以凑成10的倍数
+            const remaining = values.filter((_, idx) => idx !== i && idx !== j && idx !== k);
+            const niuValue = (remaining[0] + remaining[1]) % 10;
+            
+            if (!bestNiu || niuValue > bestNiu.value) {
+              bestNiu = { value: niuValue, combo: [i, j, k] };
+            }
+          }
+        }
+      }
+    }
+
+    if (bestNiu) {
+      const niuNum = bestNiu.value;
+      if (niuNum === 0) {
+        // 牛牛
+        const allFlowersInNiu = cardHand.every(isFlowerCard);
+        return {
+          name: allFlowersInNiu ? "花牛牛" : "牛牛",
+          level: allFlowersInNiu ? 7 : 6,
+          multiplier: allFlowersInNiu ? "x5" : "x4",
+          description: allFlowersInNiu ? "花牌牛牛，锦上添花！" : "完美组合！",
+          color: allFlowersInNiu ? "#ec4899" : "#059669"
+        };
+      } else {
+        return {
+          name: `牛${niuNum}`,
+          level: niuNum,
+          multiplier: niuNum >= 7 ? `x${niuNum - 5}` : "x1",
+          description: niuNum >= 7 ? "大牛来了！" : "小有收获！",
+          color: niuNum >= 7 ? "#059669" : "#6b7280"
+        };
+      }
+    }
+
+    return {
+      name: "没牛",
+      level: 0,
+      multiplier: "x0",
+      description: "再接再厉！",
+      color: "#9ca3af"
+    };
+  };
+
+  // 摇牌
+  const rollCards = () => {
+    if (isRolling) return;
+
+    setIsRolling(true);
+    setGameResult(null);
+
+    // 根据概率决定是否生成特殊牌型
+    let finalCards;
+    
+    if (shouldTriggerRare(RARE_PROBABILITIES.zhaDan)) {
+      finalCards = generateSpecialHand("zhaDan");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuXiaoNiu)) {
+      finalCards = generateSpecialHand("wuXiaoNiu");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuHuaNiu)) {
+      finalCards = generateSpecialHand("wuHuaNiu");
+    } else {
+      // 生成普通随机牌（确保不是特殊牌型）
+      finalCards = generateNormalCards();
+    }
+
+    setTimeout(() => {
+      setCards(finalCards);
+      const result = checkNiuNiuResult(finalCards);
+      setGameResult(result);
+
+      setHistory(prev => [
+        ...prev,
+        { 
+          cards: finalCards, 
+          result, 
+          time: new Date().toLocaleString() 
+        }
+      ]);
+
+      setIsRolling(false);
+    }, 2000);
+  };
+
+  // 页面加载时初始化
+  useEffect(() => {
+    setCards(Array(5).fill(0).map(generateRandomCard));
+  }, []);
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <button onClick={onBack} style={styles.backBtn}>
+          ← 返回
+        </button>
+        <h1 style={styles.title}>🃏 牛牛游戏</h1>
+        <div style={styles.spacer}></div>
+      </div>
+
+      <div style={styles.gameArea}>
+        <div style={styles.cardsContainer}>
+          {cards.map((card, index) => (
+            <div
+              key={index}
+              style={{
+                ...styles.card,
+                ...(isRolling ? styles.cardRolling : {}),
+                animationDelay: `${index * 100}ms`
+              }}
+            >
+              <div style={{ ...styles.cardSuit, color: suitColors[card.suit] }}>
+                {card.suit}
+              </div>
+              <div style={{ ...styles.cardRank, color: suitColors[card.suit] }}>
+                {card.rank}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {!isRolling && gameResult && (
+          <div style={{ ...styles.resultBox, borderColor: gameResult.color }}>
+            <h2 style={{ ...styles.resultName, color: gameResult.color }}>
+              {gameResult.name}
+            </h2>
+            <div style={styles.resultDetails}>
+              <span style={styles.multiplier}>{gameResult.multiplier}</span>
+              <span style={styles.level}>等级 {gameResult.level}</span>
+            </div>
+            <p style={styles.description}>{gameResult.description}</p>
+          </div>
+        )}
+
+        <button
+          onClick={rollCards}
+          disabled={isRolling}
+          style={{
+            ...styles.rollBtn,
+            ...(isRolling ? styles.rollBtnDisabled : {})
+          }}
+        >
+          {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
+        </button>
+
+        {isRolling && (
+          <div style={styles.rollingStatus}>买定离手...</div>
+        )}
+      </div>
+
+      <HistoryRecord history={history} styles={styles} />
+
+    </div>
+  );
+};
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
+    padding: "20px",
+    fontFamily: "system-ui, -apple-system, sans-serif"
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "30px",
+    gap: "15px"
+  },
+  backBtn: {
+    padding: "10px 20px",
+    fontSize: "16px",
+    backgroundColor: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+    transition: "all 0.3s"
+  },
+  title: {
+    fontSize: "28px",
+    color: "#fff",
+    margin: 0,
+    textAlign: "center",
+    flex: 1
+  },
+  spacer: {
+    width: "100px"
+  },
+  gameArea: {
+    maxWidth: "800px",
+    margin: "0 auto",
+    textAlign: "center"
+  },
+  cardsContainer: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "15px",
+    flexWrap: "wrap",
+    marginBottom: "30px",
+    minHeight: "180px"
+  },
+  card: {
+    width: "120px",
+    height: "170px",
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    transition: "transform 0.3s"
+  },
+  cardRolling: {
+    animation: "cardFlip 0.5s ease-in-out infinite"
+  },
+  cardSuit: {
+    fontSize: "40px",
+    fontWeight: "bold",
+    marginBottom: "8px"
+  },
+  cardRank: {
+    fontSize: "32px",
+    fontWeight: "bold"
+  },
+  resultBox: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: "16px",
+    padding: "25px",
+    margin: "30px auto",
+    maxWidth: "500px",
+    border: "3px solid",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
+  },
+  resultName: {
+    fontSize: "32px",
+    fontWeight: "bold",
+    margin: "0 0 15px 0"
+  },
+  resultDetails: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "20px",
+    marginBottom: "15px"
+  },
+  multiplier: {
+    fontSize: "24px",
+    fontWeight: "bold",
+    color: "#059669",
+    backgroundColor: "#d1fae5",
+    padding: "5px 15px",
+    borderRadius: "20px"
+  },
+  level: {
+    fontSize: "16px",
+    color: "#6b7280",
+    backgroundColor: "#f3f4f6",
+    padding: "5px 15px",
+    borderRadius: "20px",
+    display: "flex",
+    alignItems: "center"
+  },
+  description: {
+    fontSize: "18px",
+    color: "#4b5563",
+    margin: 0
+  },
+  rollBtn: {
+    padding: "18px 50px",
+    fontSize: "22px",
+    fontWeight: "bold",
+    backgroundColor: "#10b981",
+    color: "#fff",
+    border: "none",
+    borderRadius: "12px",
+    cursor: "pointer",
+    transition: "all 0.3s",
+    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)"
+  },
+  rollBtnDisabled: {
+    backgroundColor: "#6b7280",
+    cursor: "not-allowed",
+    opacity: 0.7
+  },
+  rollingStatus: {
+    marginTop: "20px",
+    fontSize: "20px",
+    color: "#fbbf24",
+    fontWeight: "bold",
+    animation: "pulse 1s ease-in-out infinite"
+  },
+  historySection: {
+    maxWidth: "600px",
+    margin: "40px auto 0",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    padding: "20px",
+    backdropFilter: "blur(10px)"
+  },
+  historyTitle: {
+    color: "#fff",
+    fontSize: "20px",
+    marginBottom: "15px"
+  },
+  historyList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
+  },
+  historyItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "12px",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: "8px",
+    fontSize: "14px"
+  },
+  historyTime: {
+    color: "#6b7280"
+  },
+  historyResult: {
+    fontWeight: "bold"
+  }
+};
+
+// 添加CSS动画
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes cardFlip {
+    0%, 100% { transform: rotateY(0deg); }
+    50% { transform: rotateY(180deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+export default NiuNiuGame;
