@@ -4,7 +4,7 @@ import logo from "./pic/logo.png"; // 导入本地logo图片
 import NiuNiuGame from "./components/niuniugame";
 
 const DiceGame = () => {
-  const [step, setStep] = useState("select");
+  const [step, setStep] = useState("menu");
   const [diceCount, setDiceCount] = useState(1);
   const [diceValues, setDiceValues] = useState([]);
   const [isRolling, setIsRolling] = useState(false);
@@ -235,10 +235,14 @@ const DiceGame = () => {
   };
 
   const goBack = () => {
-    setStep("select");
+    if (diceCount === 5 || diceCount === 6) {
+      setStep("menu");
+    } else {
+      setStep("select");
+    }
     setDiceValues([]);
     setIsRolling(false);
-    setGameResult(null); // 清除游戏结果
+    setGameResult(null);
   };
 
   const startGame = () => {
@@ -256,6 +260,59 @@ const DiceGame = () => {
   //     localStorage.removeItem("diceHistory");
   //   }
   // };
+  // --- 主菜单界面 ---
+  
+  if (step === "menu") {
+    return (
+      <div className="app-container">
+        <div className="select-container">
+          <div className="club-logo">
+            <img src={logo} alt="零界突破俱乐部" className="logo-image" />
+          </div>
+          <h1 className="main-title">🎲 零界突破俱乐部游戏中心</h1>
+
+          <div className="select-section">
+            <h2 className="section-title">选择游戏模式</h2>
+            <div className="game-mode-grid">
+              <button
+                className="mode-box"
+                onClick={() => {
+                  setDiceCount(6);
+                  setStep("game");
+                }}
+              >
+                🥮 博饼游戏
+                <p className="mode-desc">6个骰子 · 传统中秋玩法</p>
+              </button>
+
+              <button
+                className="mode-box"
+                onClick={() => {
+                  setDiceCount(5);
+                  setStep("game");
+                }}
+              >
+                🃏 牛牛游戏
+                <p className="mode-desc">5个骰子 · 牛牛扑克模式</p>
+              </button>
+
+              <button className="mode-box" onClick={() => setStep("select")}>
+                🎲 骰子游戏
+                <p className="mode-desc">自由选择骰子数量</p>
+              </button>
+            </div>
+          </div>
+
+          <div className="club-trademark">
+            <p className="trademark-text">
+              © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
+            </p>
+            <p className="club-slogan">突破极限,创造无限可能</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === "select") {
     return (
