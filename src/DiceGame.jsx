@@ -308,6 +308,7 @@ const DiceGame = () => {
               © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
             </p>
             <p className="club-slogan">突破极限,创造无限可能</p>
+            <p className="club-slogan">该游戏仅供娱乐，无不良引导与金钱交易行为</p>
           </div>
         </div>
       </div>
@@ -366,6 +367,7 @@ const DiceGame = () => {
             <p className="club-slogan">突破极限,创造无限可能</p>
           </div>
         </div>
+        
       </div>
     );
   }

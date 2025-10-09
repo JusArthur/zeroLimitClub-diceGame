@@ -8,7 +8,14 @@ const NiuNiuGame = ({ onBack }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [history, setHistory] = useState([]);
-  const [revealedCards, setRevealedCards] = useState([false, false, false, false, false]);
+  const [revealedCards, setRevealedCards] = useState([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
+
 
   // Local storage utility functions
   const saveToStorage = (key, value) => {
@@ -49,6 +56,10 @@ const NiuNiuGame = ({ onBack }) => {
     wuHuaNiu: 0.0003, // 五花牛 0.03%
     wuXiaoNiu: 0.000005, // 五小牛 0.0005%
     zhaDan: 0.0002, // 炸弹 0.02%
+    noNiu: 0.3, // 没牛 ~51%
+    niuNiu: 0.02, // 牛牛 ~2%
+    niuJiu: 0.03, // 牛9 ~3%
+    niuBa: 0.03, // 牛8 ~3%
   };
 
   // 扑克牌花色和点数
@@ -120,6 +131,59 @@ const NiuNiuGame = ({ onBack }) => {
     // 检查五花牛
     if (allFlowers) return true;
 
+    // 检查牛牛
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = values[i] + values[j] + values[k];
+          if (sum % 10 === 0) {
+            // 找到三张和为10的倍数
+            const remaining = values.filter(
+              (_, idx) => idx !== i && idx !== j && idx !== k
+            );
+            if ((remaining[0] + remaining[1]) % 10 === 0) {
+              return true; // 剩余两张和mod 10 = 0，满足牛牛
+            }
+          }
+        }
+      }
+    }
+
+    // 检查牛9
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = values[i] + values[j] + values[k];
+          if (sum % 10 === 0) {
+            // 找到三张和为10的倍数
+            const remaining = values.filter(
+              (_, idx) => idx !== i && idx !== j && idx !== k
+            );
+            if ((remaining[0] + remaining[1]) % 10 === 9) {
+              return true; // 剩余两张和mod 10 = 9，满足牛9
+            }
+          }
+        }
+      }
+    }
+
+    // 检查牛牛
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        for (let k = j + 1; k < 5; k++) {
+          const sum = values[i] + values[j] + values[k];
+          if (sum % 10 === 0) {
+            // 找到三张和为10的倍数
+            const remaining = values.filter(
+              (_, idx) => idx !== i && idx !== j && idx !== k
+            );
+            if ((remaining[0] + remaining[1]) % 10 === 8) {
+              return true; // 剩余两张和mod 10 = 8，满足牛8
+            }
+          }
+        }
+      }
+    }
     return false;
   };
 
@@ -189,7 +253,7 @@ const NiuNiuGame = ({ onBack }) => {
           }
           attempts++;
         }
-        
+
         // 如果重试失败，返回一个默认（或抛错），但实际不会发生
         return Array(5)
           .fill(0)
@@ -204,6 +268,88 @@ const NiuNiuGame = ({ onBack }) => {
             rank: flowerRanks[Math.floor(Math.random() * flowerRanks.length)],
           }));
 
+      case "niuNiu": // 牛牛：三张和为10的倍数，剩余两张和mod 10 = 0
+        let niuNiuAttempts = 0;
+        const niuNiuMaxAttempts = 100;
+        while (niuNiuAttempts < niuNiuMaxAttempts) {
+          const cards = Array(5).fill(0).map(generateRandomCard);
+          const values = cards.map(getCardValue);
+          for (let i = 0; i < 3; i++) {
+            for (let j = i + 1; j < 4; j++) {
+              for (let k = j + 1; k < 5; k++) {
+                const sum = values[i] + values[j] + values[k];
+                if (sum % 10 === 0) {
+                  const remaining = values.filter(
+                    (_, idx) => idx !== i && idx !== j && idx !== k
+                  );
+                  if ((remaining[0] + remaining[1]) % 10 === 0) {
+                    return cards; // 满足牛牛条件
+                  }
+                }
+              }
+            }
+          }
+          niuNiuAttempts++;
+        }
+        // 如果重试失败，返回普通牌
+
+        return generateNormalCards();
+
+      case "niuJiu":
+        // 牛九：三张和为10的倍数，剩余两张和mod 10 = 9
+        let niuJiuAttempts = 0;
+        const niuJiuMaxAttempts = 100;
+        while (niuJiuAttempts < niuJiuMaxAttempts) {
+          const cards = Array(5).fill(0).map(generateRandomCard);
+          const values = cards.map(getCardValue);
+          for (let i = 0; i < 3; i++) {
+            for (let j = i + 1; j < 4; j++) {
+              for (let k = j + 1; k < 5; k++) {
+                const sum = values[i] + values[j] + values[k];
+                if (sum % 10 === 0) {
+                  const remaining = values.filter(
+                    (_, idx) => idx !== i && idx !== j && idx !== k
+                  );
+                  if ((remaining[0] + remaining[1]) % 10 === 9) {
+                    return cards; // 满足牛9条件
+                  }
+                }
+              }
+            }
+          }
+          niuJiuAttempts++;
+        }
+        // 如果重试失败，返回普通牌
+
+        return generateNormalCards();
+
+      case "niuBa":
+        // 牛8：三张和为10的倍数，剩余两张和mod 10 = 8
+        let niuBaAttempts = 0;
+        const niuBaMaxAttempts = 100;
+        while (niuBaAttempts < niuBaMaxAttempts) {
+          const cards = Array(5).fill(0).map(generateRandomCard);
+          const values = cards.map(getCardValue);
+          for (let i = 0; i < 3; i++) {
+            for (let j = i + 1; j < 4; j++) {
+              for (let k = j + 1; k < 5; k++) {
+                const sum = values[i] + values[j] + values[k];
+                if (sum % 10 === 0) {
+                  const remaining = values.filter(
+                    (_, idx) => idx !== i && idx !== j && idx !== k
+                  );
+                  if ((remaining[0] + remaining[1]) % 10 === 8) {
+                    return cards; // 满足牛8条件
+                  }
+                }
+              }
+            }
+          }
+          niuBaAttempts++;
+        }
+        // 如果重试失败，返回普通牌
+
+        return generateNormalCards();
       default:
         return null;
     }
@@ -219,7 +365,16 @@ const NiuNiuGame = ({ onBack }) => {
 
     // 中文数字映射
     const chineseNumbers = [
-      "零", "一", "二", "三", "四", "五", "六", "七", "八", "九"
+      "零",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六",
+      "七",
+      "八",
+      "九",
     ];
 
     // 检查炸弹（4张相同）
@@ -308,6 +463,40 @@ const NiuNiuGame = ({ onBack }) => {
     };
   };
 
+  // 生成牌并检查是否满足没牛要求
+  const generateCardsWithNoNiuPreference = () => {
+    let finalCards;
+    let result;
+
+    if (shouldTriggerRare(RARE_PROBABILITIES.zhaDan)) {
+      finalCards = generateSpecialHand("zhaDan");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuXiaoNiu)) {
+      finalCards = generateSpecialHand("wuXiaoNiu");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuHuaNiu)) {
+      finalCards = generateSpecialHand("wuHuaNiu");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.noNiu)) {
+      // 尝试生成没牛的牌
+      let normalAttempts = 0;
+      const normalMaxAttempts = 50;
+      do {
+        finalCards = generateNormalCards();
+        result = checkNiuNiuResult(finalCards);
+        normalAttempts++;
+      } while (result.name !== "没牛" && normalAttempts < normalMaxAttempts);
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.niuNiu)) {
+      finalCards = generateSpecialHand("niuNiu");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.niuJiu)) {
+        finalCards = generateSpecialHand("niuJiu");
+    } else if (shouldTriggerRare(RARE_PROBABILITIES.niuBa)) {
+        finalCards = generateSpecialHand("niuBa");
+    }
+     else {
+      finalCards = generateNormalCards();
+    }
+
+    return finalCards;
+  };
+
   // 摇牌
   const rollCards = () => {
     if (isRolling) return;
@@ -316,19 +505,8 @@ const NiuNiuGame = ({ onBack }) => {
     setGameResult(null);
     setRevealedCards([false, false, false, false, false]);
 
-    // 根据概率决定是否生成特殊牌型
-    let finalCards;
-
-    if (shouldTriggerRare(RARE_PROBABILITIES.zhaDan)) {
-      finalCards = generateSpecialHand("zhaDan");
-    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuXiaoNiu)) {
-      finalCards = generateSpecialHand("wuXiaoNiu");
-    } else if (shouldTriggerRare(RARE_PROBABILITIES.wuHuaNiu)) {
-      finalCards = generateSpecialHand("wuHuaNiu");
-    } else {
-      // 生成普通随机牌（确保不是特殊牌型）
-      finalCards = generateNormalCards();
-    }
+    // 生成牌，优先尝试没牛
+    const finalCards = generateCardsWithNoNiuPreference();
 
     // Set initial cards immediately
     setCards(finalCards);
@@ -337,7 +515,10 @@ const NiuNiuGame = ({ onBack }) => {
     const fastInterval = 500; // Time between first three cards (ms)
     const slowInterval = 1500; // Time between last two cards (ms)
     finalCards.forEach((_, index) => {
-      const delay = index < 3 ? fastInterval * (index + 1) : (fastInterval * 3) + (slowInterval * (index - 2));
+      const delay =
+        index < 3
+          ? fastInterval * (index + 1)
+          : fastInterval * 3 + slowInterval * (index - 2);
       setTimeout(() => {
         setRevealedCards((prev) => {
           const newRevealed = [...prev];
@@ -392,7 +573,9 @@ const NiuNiuGame = ({ onBack }) => {
               key={index}
               style={{
                 ...styles.card,
-                ...(isRolling && !revealedCards[index] ? styles.cardRolling : {}),
+                ...(isRolling && !revealedCards[index]
+                  ? styles.cardRolling
+                  : {}),
                 animationDelay: `${index * 100}ms`,
               }}
             >
@@ -418,16 +601,18 @@ const NiuNiuGame = ({ onBack }) => {
           </div>
         )}
 
-        <button
-          onClick={rollCards}
-          disabled={isRolling}
-          style={{
-            ...styles.rollBtn,
-            ...(isRolling ? styles.rollBtnDisabled : {}),
-          }}
-        >
-          {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
-        </button>
+        <div style={styles.buttonContainer}>
+          <button
+            onClick={rollCards}
+            disabled={isRolling}
+            style={{
+              ...styles.rollBtn,
+              ...(isRolling ? styles.rollBtnDisabled : {}),
+            }}
+          >
+            {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
+          </button>
+        </div>
 
         {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
       </div>
@@ -541,6 +726,12 @@ const styles = {
     color: "#4b5563",
     margin: 0,
   },
+  buttonContainer: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "20px",
+    marginTop: "20px",
+  },
   rollBtn: {
     padding: "18px 50px",
     fontSize: "22px",
@@ -552,7 +743,18 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.3s",
     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)",
-    marginRight: "20px",
+  },
+  testBtn: {
+    padding: "18px 50px",
+    fontSize: "22px",
+    fontWeight: "bold",
+    backgroundColor: "#3b82f6",
+    color: "#fff",
+    border: "none",
+    borderRadius: "12px",
+    cursor: "pointer",
+    transition: "all 0.3s",
+    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
   },
   rollBtnDisabled: {
     backgroundColor: "#6b7280",
@@ -565,6 +767,40 @@ const styles = {
     color: "#fbbf24",
     fontWeight: "bold",
     animation: "pulse 1s ease-in-out infinite",
+  },
+  testResultsContainer: {
+    maxWidth: "600px",
+    margin: "40px auto",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: "12px",
+    padding: "20px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+  },
+  testResultsTitle: {
+    fontSize: "24px",
+    color: "#1f2937",
+    marginBottom: "20px",
+    textAlign: "center",
+  },
+  testResultsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  testResultItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "10px",
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: "8px",
+    fontSize: "16px",
+  },
+  testResultName: {
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  testResultCount: {
+    color: "#4b5563",
   },
   historySection: {
     maxWidth: "600px",
