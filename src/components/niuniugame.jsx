@@ -2,6 +2,99 @@
 import React, { useState, useEffect } from "react";
 import HistoryRecord from "./HistoryRecord";
 
+// // Test Button Component for running simulations
+// const TestButton = ({ generateSpecialHand, generateNormalCards, checkNiuNiuResult, RARE_PROBABILITIES }) => {
+//   const [isTesting, setIsTesting] = useState(false);
+//   const [progress, setProgress] = useState(0);
+//   const [testResults, setTestResults] = useState(null);
+
+//   const runSimulations = async () => {
+//     setIsTesting(true);
+//     setProgress(0);
+//     setTestResults(null);
+
+//     const totalSimulations = 1_000_000;
+//     const batchSize = 10000; // Process in batches to avoid blocking
+//     const resultCounts = {
+//       "炸弹": 0,
+//       "五小牛": 0,
+//       "五花牛": 0,
+//       "牛牛": 0,
+//       "牛九": 0,
+//       "牛八": 0,
+//       "牛七": 0,
+//       "牛六": 0,
+//       "牛五": 0,
+//       "牛四": 0,
+//       "牛三": 0,
+//       "牛二": 0,
+//       "牛一": 0,
+//       "没牛": 0,
+//     };
+
+//     for (let i = 0; i < totalSimulations; i += batchSize) {
+//       for (let j = 0; j < batchSize && i + j < totalSimulations; j++) {
+//         let finalCards;
+//         if (Math.random() < RARE_PROBABILITIES.zhaDan) {
+//           finalCards = generateSpecialHand("zhaDan");
+//         } else if (Math.random() < RARE_PROBABILITIES.wuXiaoNiu) {
+//           finalCards = generateSpecialHand("wuXiaoNiu");
+//         } else if (Math.random() < RARE_PROBABILITIES.wuHuaNiu) {
+//           finalCards = generateSpecialHand("wuHuaNiu");
+//         } else {
+//           finalCards = generateNormalCards();
+//         }
+//         const result = checkNiuNiuResult(finalCards);
+//         resultCounts[result.name] = (resultCounts[result.name] || 0) + 1;
+//       }
+//       setProgress(((i + batchSize) / totalSimulations) * 100);
+//       // Yield to the event loop to keep UI responsive
+//       await new Promise((resolve) => setTimeout(resolve, 0));
+//     }
+
+//     setTestResults(resultCounts);
+//     setIsTesting(false);
+//   };
+
+//   return (
+//     <div style={styles.testContainer}>
+//       <button
+//         onClick={runSimulations}
+//         disabled={isTesting}
+//         style={{
+//           ...styles.testBtn,
+//           ...(isTesting ? styles.testBtnDisabled : {}),
+//         }}
+//       >
+//         {isTesting ? `测试中 (${progress.toFixed(2)}%)` : "测试一百万次"}
+//       </button>
+//       {testResults && (
+//         <div style={styles.testResults}>
+//           <h3 style={styles.testResultsTitle}>测试结果 (1,000,000 次)</h3>
+//           <table style={styles.resultsTable}>
+//             <thead>
+//               <tr>
+//                 <th style={styles.tableHeader}>牌型</th>
+//                 <th style={styles.tableHeader}>次数</th>
+//                 <th style={styles.tableHeader}>概率</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {Object.entries(testResults).map(([name, count]) => (
+//                 <tr key={name}>
+//                   <td style={styles.tableCell}>{name}</td>
+//                   <td style={styles.tableCell}>{count.toLocaleString()}</td>
+//                   <td style={styles.tableCell}>{((count / 1_000_000) * 100).toFixed(4)}%</td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
 // 牛牛游戏组件
 const NiuNiuGame = ({ onBack }) => {
   const [cards, setCards] = useState([]);
@@ -28,15 +121,6 @@ const NiuNiuGame = ({ onBack }) => {
     }
   };
 
-  // Clear history from state and localStorage
-  const clearHistory = () => {
-    setHistory([]);
-    try {
-      localStorage.removeItem("niuNiuHistory");
-    } catch (e) {
-      console.error("清除历史记录失败:", e);
-    }
-  };
   // Load history from localStorage on mount
   useEffect(() => {
     const saved = getFromStorage("niuNiuHistory");
@@ -54,9 +138,9 @@ const NiuNiuGame = ({ onBack }) => {
 
   // 可调节的概率配置 (0-1之间，越小越稀有)
   const RARE_PROBABILITIES = {
-    wuHuaNiu: 0.2, // 五花牛 0.01%
-    wuXiaoNiu: 0.2, // 五小牛 0.01%
-    zhaDan: 0.15, // 炸弹 0.01%
+    wuHuaNiu: 0.0003, // 五花牛 0.03%
+    wuXiaoNiu: 0.000005, // 五小牛 0.0005%
+    zhaDan: 0.0002, // 炸弹 0.02%
   };
 
   // 扑克牌花色和点数
@@ -128,22 +212,6 @@ const NiuNiuGame = ({ onBack }) => {
     // 检查五花牛
     if (allFlowers) return true;
 
-    // 检查牛牛
-    for (let i = 0; i < 3; i++) {
-      for (let j = i + 1; j < 4; j++) {
-        for (let k = j + 1; k < 5; k++) {
-          const sum = values[i] + values[j] + values[k];
-          if (sum % 10 === 0) {
-            const remaining = values.filter(
-              (_, idx) => idx !== i && idx !== j && idx !== k
-            );
-            const niuValue = (remaining[0] + remaining[1]) % 10;
-            if (niuValue === 0) return true; // 发现牛牛
-          }
-        }
-      }
-    }
-
     return false;
   };
 
@@ -213,6 +281,7 @@ const NiuNiuGame = ({ onBack }) => {
           }
           attempts++;
         }
+        
         // 如果重试失败，返回一个默认（或抛错），但实际不会发生
         return Array(5)
           .fill(0)
@@ -347,7 +416,8 @@ const NiuNiuGame = ({ onBack }) => {
       finalCards = generateSpecialHand("wuXiaoNiu");
     } else if (shouldTriggerRare(RARE_PROBABILITIES.wuHuaNiu)) {
       finalCards = generateSpecialHand("wuHuaNiu");
-    } else {
+     }
+    else {
       // 生成普通随机牌（确保不是特殊牌型）
       finalCards = generateNormalCards();
     }
@@ -433,10 +503,14 @@ const NiuNiuGame = ({ onBack }) => {
         </button>
 
         {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
+
+        {/* <TestButton
+          generateSpecialHand={generateSpecialHand}
+          generateNormalCards={generateNormalCards}
+          checkNiuNiuResult={checkNiuNiuResult}
+          RARE_PROBABILITIES={RARE_PROBABILITIES}
+        /> */}
       </div>
-      <button onClick={clearHistory} style={styles.clearHistoryBtn}>
-            清除历史
-          </button>
       <HistoryRecord history={history} styles={styles} />
     </div>
   );
@@ -558,6 +632,7 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.3s",
     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)",
+    marginRight: "20px", // Add spacing between buttons
   },
   rollBtnDisabled: {
     backgroundColor: "#6b7280",
@@ -570,6 +645,54 @@ const styles = {
     color: "#fbbf24",
     fontWeight: "bold",
     animation: "pulse 1s ease-in-out infinite",
+  },
+  testContainer: {
+    marginTop: "20px",
+  },
+  testBtn: {
+    padding: "18px 50px",
+    fontSize: "22px",
+    fontWeight: "bold",
+    backgroundColor: "#3b82f6",
+    color: "#fff",
+    border: "none",
+    borderRadius: "12px",
+    cursor: "pointer",
+    transition: "all 0.3s",
+    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
+  },
+  testBtnDisabled: {
+    backgroundColor: "#6b7280",
+    cursor: "not-allowed",
+    opacity: 0.7,
+  },
+  testResults: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: "12px",
+    padding: "20px",
+    margin: "20px auto",
+    maxWidth: "600px",
+  },
+  testResultsTitle: {
+    fontSize: "24px",
+    color: "#1e40af",
+    marginBottom: "15px",
+  },
+  resultsTable: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  tableHeader: {
+    padding: "10px",
+    backgroundColor: "#e5e7eb",
+    color: "#1f2937",
+    fontWeight: "bold",
+    borderBottom: "2px solid #d1d5db",
+  },
+  tableCell: {
+    padding: "10px",
+    borderBottom: "1px solid #e5e7eb",
+    textAlign: "center",
   },
   historySection: {
     maxWidth: "600px",
