@@ -8,6 +8,7 @@ const NiuNiuGame = ({ onBack }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [history, setHistory] = useState([]);
+
   // Local storage utility functions
   const saveToStorage = (key, value) => {
     try {
@@ -27,6 +28,15 @@ const NiuNiuGame = ({ onBack }) => {
     }
   };
 
+  // Clear history from state and localStorage
+  const clearHistory = () => {
+    setHistory([]);
+    try {
+      localStorage.removeItem("niuNiuHistory");
+    } catch (e) {
+      console.error("清除历史记录失败:", e);
+    }
+  };
   // Load history from localStorage on mount
   useEffect(() => {
     const saved = getFromStorage("niuNiuHistory");
@@ -44,9 +54,9 @@ const NiuNiuGame = ({ onBack }) => {
 
   // 可调节的概率配置 (0-1之间，越小越稀有)
   const RARE_PROBABILITIES = {
-    wuHuaNiu: 0.3, // 五花牛 0.01%
-    wuXiaoNiu: 0.4, // 五小牛 0.01%
-    zhaDan: 0.2, // 炸弹 0.01%
+    wuHuaNiu: 0.2, // 五花牛 0.01%
+    wuXiaoNiu: 0.2, // 五小牛 0.01%
+    zhaDan: 0.15, // 炸弹 0.01%
   };
 
   // 扑克牌花色和点数
@@ -183,7 +193,6 @@ const NiuNiuGame = ({ onBack }) => {
         const fifthCard = generateRandomCard();
         return [...bombCards, fifthCard];
 
-      // 生成特定牌型 - 修改 wuXiaoNiu
       case "wuXiaoNiu": // 五小牛：5张牌都小于5且总和≤10
         const smallRanks = ["A", "2", "3", "4"];
         let attempts = 0;
@@ -231,6 +240,11 @@ const NiuNiuGame = ({ onBack }) => {
     const allFlowers = cardHand.every(isFlowerCard);
     const allSmall = cardHand.every((c) => getCardValue(c) <= 5);
 
+    // 中文数字映射
+    const chineseNumbers = [
+      "零", "一", "二", "三", "四", "五", "六", "七", "八", "九"
+    ];
+
     // 检查炸弹（4张相同）
     const rankCounts = {};
     cardHand.forEach((card) => {
@@ -241,8 +255,7 @@ const NiuNiuGame = ({ onBack }) => {
     if (hasBomb) {
       return {
         name: "炸弹",
-        level: 10,
-        multiplier: "x8",
+        multiplier: "x17",
         description: "四张相同！威力无穷！",
         color: "#dc2626",
       };
@@ -252,8 +265,7 @@ const NiuNiuGame = ({ onBack }) => {
     if (allSmall && values.reduce((a, b) => a + b, 0) <= 10) {
       return {
         name: "五小牛",
-        level: 9,
-        multiplier: "x7",
+        multiplier: "x20",
         description: "小牌大智慧！",
         color: "#f59e0b",
       };
@@ -263,8 +275,7 @@ const NiuNiuGame = ({ onBack }) => {
     if (allFlowers) {
       return {
         name: "五花牛",
-        level: 8,
-        multiplier: "x6",
+        multiplier: "x15",
         description: "满堂花开！",
         color: "#7c3aed",
       };
@@ -296,20 +307,16 @@ const NiuNiuGame = ({ onBack }) => {
     if (bestNiu) {
       const niuNum = bestNiu.value;
       if (niuNum === 0) {
-        // 牛牛
-        const allFlowersInNiu = cardHand.every(isFlowerCard);
         return {
-          name: allFlowersInNiu ? "花牛牛" : "牛牛",
-          level: allFlowersInNiu ? 7 : 6,
-          multiplier: allFlowersInNiu ? "x5" : "x4",
-          description: allFlowersInNiu ? "花牌牛牛，锦上添花！" : "完美组合！",
-          color: allFlowersInNiu ? "#ec4899" : "#059669",
+          name: "牛牛",
+          multiplier: "x10",
+          description: "完美组合！",
+          color: "#059669",
         };
       } else {
         return {
-          name: `牛${niuNum}`,
-          level: niuNum,
-          multiplier: niuNum >= 7 ? `x${niuNum - 5}` : "x1",
+          name: `牛${chineseNumbers[niuNum]}`,
+          multiplier: `x${niuNum}`,
           description: niuNum >= 7 ? "大牛来了！" : "小有收获！",
           color: niuNum >= 7 ? "#059669" : "#6b7280",
         };
@@ -318,7 +325,6 @@ const NiuNiuGame = ({ onBack }) => {
 
     return {
       name: "没牛",
-      level: 0,
       multiplier: "x0",
       description: "再接再厉！",
       color: "#9ca3af",
@@ -367,7 +373,6 @@ const NiuNiuGame = ({ onBack }) => {
     }, 2000);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCards(Array(5).fill(0).map(generateRandomCard));
   }, []);
@@ -378,6 +383,9 @@ const NiuNiuGame = ({ onBack }) => {
         <button onClick={onBack} style={styles.backBtn}>
           ← 返回
         </button>
+        <button onClick={clearHistory} style={styles.clearHistoryBtn}>
+            清除历史
+          </button>
         <h1 style={styles.title}>🃏 牛牛游戏</h1>
         <div style={styles.spacer}></div>
       </div>
@@ -410,7 +418,6 @@ const NiuNiuGame = ({ onBack }) => {
             </h2>
             <div style={styles.resultDetails}>
               <span style={styles.multiplier}>{gameResult.multiplier}</span>
-              <span style={styles.level}>等级 {gameResult.level}</span>
             </div>
             <p style={styles.description}>{gameResult.description}</p>
           </div>
@@ -534,15 +541,6 @@ const styles = {
     backgroundColor: "#d1fae5",
     padding: "5px 15px",
     borderRadius: "20px",
-  },
-  level: {
-    fontSize: "16px",
-    color: "#6b7280",
-    backgroundColor: "#f3f4f6",
-    padding: "5px 15px",
-    borderRadius: "20px",
-    display: "flex",
-    alignItems: "center",
   },
   description: {
     fontSize: "18px",

@@ -332,9 +332,8 @@ const DiceGame = () => {
           <h1 className="main-title">🎲🎴零界突破俱乐部</h1>
 
           <div className="select-section">
-            <h2 className="section-title">选择游戏类型</h2>
+            <h2 className="section-title">选择骰子数量</h2>
             <div className="game-mode-hint">
-            <p>💡 6个骰子 = 传统博饼游戏</p>
             </div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -352,8 +351,7 @@ const DiceGame = () => {
           </div>
 
           <div className="selected-info">
-            <p>              已选择: {diceCount} 个骰子
-              {diceCount === 6 && " - 博饼模式"}</p>
+            <p>              已选择: {diceCount} 个骰子</p>
           </div>
 
           <button onClick={startGame} className="start-btn">
