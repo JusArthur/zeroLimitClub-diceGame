@@ -56,10 +56,10 @@ const NiuNiuGame = ({ onBack }) => {
     wuHuaNiu: 0.0003, // 五花牛 0.03%
     wuXiaoNiu: 0.000005, // 五小牛 0.0005%
     zhaDan: 0.0002, // 炸弹 0.02%
-    noNiu: 0.3, // 没牛 ~51%
-    niuNiu: 0.02, // 牛牛 ~2%
-    niuJiu: 0.03, // 牛9 ~3%
-    niuBa: 0.03, // 牛8 ~3%
+    noNiu: 0.2, // 没牛 ~51%
+    niuNiu: 0.03, // 牛牛 ~2%
+    niuJiu: 0.05, // 牛9 ~3%
+    niuBa: 0.06, // 牛8 ~3%
   };
 
   // 扑克牌花色和点数
@@ -513,7 +513,7 @@ const NiuNiuGame = ({ onBack }) => {
 
     // Sequentially reveal cards
     const fastInterval = 500; // Time between first three cards (ms)
-    const slowInterval = 1500; // Time between last two cards (ms)
+    const slowInterval = 1000; // Time between last two cards (ms)
     finalCards.forEach((_, index) => {
       const delay =
         index < 3
