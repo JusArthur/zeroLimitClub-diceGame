@@ -16,41 +16,6 @@ const NiuNiuGame = ({ onBack }) => {
     false,
   ]);
 
-
-  // Local storage utility functions
-  const saveToStorage = (key, value) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
-      console.error("保存失败:", e);
-    }
-  };
-
-  const getFromStorage = (key) => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : null;
-    } catch (e) {
-      console.error("读取失败:", e);
-      return null;
-    }
-  };
-
-  // Load history from localStorage on mount
-  useEffect(() => {
-    const saved = getFromStorage("niuNiuHistory");
-    if (saved) {
-      setHistory(saved);
-    }
-  }, []);
-
-  // Save history to localStorage whenever it updates
-  useEffect(() => {
-    if (history.length > 0) {
-      saveToStorage("niuNiuHistory", history);
-    }
-  }, [history]);
-
   // 可调节的概率配置 (0-1之间，越小越稀有)
   const RARE_PROBABILITIES = {
     wuHuaNiu: 0.0003, // 五花牛 0.03%
@@ -137,12 +102,11 @@ const NiuNiuGame = ({ onBack }) => {
         for (let k = j + 1; k < 5; k++) {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
-            // 找到三张和为10的倍数
             const remaining = values.filter(
               (_, idx) => idx !== i && idx !== j && idx !== k
             );
             if ((remaining[0] + remaining[1]) % 10 === 0) {
-              return true; // 剩余两张和mod 10 = 0，满足牛牛
+              return true;
             }
           }
         }
@@ -155,30 +119,28 @@ const NiuNiuGame = ({ onBack }) => {
         for (let k = j + 1; k < 5; k++) {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
-            // 找到三张和为10的倍数
             const remaining = values.filter(
               (_, idx) => idx !== i && idx !== j && idx !== k
             );
             if ((remaining[0] + remaining[1]) % 10 === 9) {
-              return true; // 剩余两张和mod 10 = 9，满足牛9
+              return true;
             }
           }
         }
       }
     }
 
-    // 检查牛牛
+    // 检查牛8
     for (let i = 0; i < 3; i++) {
       for (let j = i + 1; j < 4; j++) {
         for (let k = j + 1; k < 5; k++) {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
-            // 找到三张和为10的倍数
             const remaining = values.filter(
               (_, idx) => idx !== i && idx !== j && idx !== k
             );
             if ((remaining[0] + remaining[1]) % 10 === 8) {
-              return true; // 剩余两张和mod 10 = 8，满足牛8
+              return true;
             }
           }
         }
@@ -190,7 +152,7 @@ const NiuNiuGame = ({ onBack }) => {
   // 生成普通牌（确保不是特殊牌型）
   const generateNormalCards = () => {
     let attempts = 0;
-    const maxAttempts = 100; // 防止无限循环
+    const maxAttempts = 100;
 
     while (attempts < maxAttempts) {
       const cards = Array(5).fill(0).map(generateRandomCard);
@@ -202,7 +164,6 @@ const NiuNiuGame = ({ onBack }) => {
       attempts++;
     }
 
-    // 如果100次都生成特殊牌，返回最后一组（极小概率）
     return Array(5).fill(0).map(generateRandomCard);
   };
 
@@ -225,7 +186,7 @@ const NiuNiuGame = ({ onBack }) => {
     ];
 
     switch (type) {
-      case "zhaDan": // 炸弹：4张相同
+      case "zhaDan":
         const bombRank = ranks[Math.floor(Math.random() * ranks.length)];
         const bombCards = suits
           .slice(0, 4)
@@ -233,10 +194,10 @@ const NiuNiuGame = ({ onBack }) => {
         const fifthCard = generateRandomCard();
         return [...bombCards, fifthCard];
 
-      case "wuXiaoNiu": // 五小牛：5张牌都小于5且总和≤10
+      case "wuXiaoNiu":
         const smallRanks = ["A", "2", "3", "4"];
         let attempts = 0;
-        const maxAttempts = 100; // 防止极端随机无限（虽概率极低）
+        const maxAttempts = 100;
         while (attempts < maxAttempts) {
           const wuXiaoCards = [];
           let total = 0;
@@ -249,17 +210,16 @@ const NiuNiuGame = ({ onBack }) => {
             total += value;
           }
           if (total <= 10) {
-            return wuXiaoCards; // 满足条件，直接返回
+            return wuXiaoCards;
           }
           attempts++;
         }
 
-        // 如果重试失败，返回一个默认（或抛错），但实际不会发生
         return Array(5)
           .fill(0)
-          .map(() => ({ suit: suits[0], rank: "A" })); // 默认全A
+          .map(() => ({ suit: suits[0], rank: "A" }));
 
-      case "wuHuaNiu": // 五花牛：5张都是JQK
+      case "wuHuaNiu":
         const flowerRanks = ["J", "Q", "K"];
         return Array(5)
           .fill(0)
@@ -268,7 +228,7 @@ const NiuNiuGame = ({ onBack }) => {
             rank: flowerRanks[Math.floor(Math.random() * flowerRanks.length)],
           }));
 
-      case "niuNiu": // 牛牛：三张和为10的倍数，剩余两张和mod 10 = 0
+      case "niuNiu":
         let niuNiuAttempts = 0;
         const niuNiuMaxAttempts = 100;
         while (niuNiuAttempts < niuNiuMaxAttempts) {
@@ -283,7 +243,7 @@ const NiuNiuGame = ({ onBack }) => {
                     (_, idx) => idx !== i && idx !== j && idx !== k
                   );
                   if ((remaining[0] + remaining[1]) % 10 === 0) {
-                    return cards; // 满足牛牛条件
+                    return cards;
                   }
                 }
               }
@@ -291,12 +251,9 @@ const NiuNiuGame = ({ onBack }) => {
           }
           niuNiuAttempts++;
         }
-        // 如果重试失败，返回普通牌
-
         return generateNormalCards();
 
       case "niuJiu":
-        // 牛九：三张和为10的倍数，剩余两张和mod 10 = 9
         let niuJiuAttempts = 0;
         const niuJiuMaxAttempts = 100;
         while (niuJiuAttempts < niuJiuMaxAttempts) {
@@ -311,7 +268,7 @@ const NiuNiuGame = ({ onBack }) => {
                     (_, idx) => idx !== i && idx !== j && idx !== k
                   );
                   if ((remaining[0] + remaining[1]) % 10 === 9) {
-                    return cards; // 满足牛9条件
+                    return cards;
                   }
                 }
               }
@@ -319,12 +276,9 @@ const NiuNiuGame = ({ onBack }) => {
           }
           niuJiuAttempts++;
         }
-        // 如果重试失败，返回普通牌
-
         return generateNormalCards();
 
       case "niuBa":
-        // 牛8：三张和为10的倍数，剩余两张和mod 10 = 8
         let niuBaAttempts = 0;
         const niuBaMaxAttempts = 100;
         while (niuBaAttempts < niuBaMaxAttempts) {
@@ -339,7 +293,7 @@ const NiuNiuGame = ({ onBack }) => {
                     (_, idx) => idx !== i && idx !== j && idx !== k
                   );
                   if ((remaining[0] + remaining[1]) % 10 === 8) {
-                    return cards; // 满足牛8条件
+                    return cards;
                   }
                 }
               }
@@ -347,8 +301,6 @@ const NiuNiuGame = ({ onBack }) => {
           }
           niuBaAttempts++;
         }
-        // 如果重试失败，返回普通牌
-
         return generateNormalCards();
       default:
         return null;
@@ -363,7 +315,6 @@ const NiuNiuGame = ({ onBack }) => {
     const allFlowers = cardHand.every(isFlowerCard);
     const allSmall = cardHand.every((c) => getCardValue(c) <= 5);
 
-    // 中文数字映射
     const chineseNumbers = [
       "零",
       "一",
@@ -377,7 +328,6 @@ const NiuNiuGame = ({ onBack }) => {
       "九",
     ];
 
-    // 检查炸弹（4张相同）
     const rankCounts = {};
     cardHand.forEach((card) => {
       rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
@@ -393,7 +343,6 @@ const NiuNiuGame = ({ onBack }) => {
       };
     }
 
-    // 五小牛：都小于5且总和≤10
     if (allSmall && values.reduce((a, b) => a + b, 0) <= 10) {
       return {
         name: "五小牛",
@@ -403,7 +352,6 @@ const NiuNiuGame = ({ onBack }) => {
       };
     }
 
-    // 五花牛：全是JQK
     if (allFlowers) {
       return {
         name: "五花牛",
@@ -413,16 +361,13 @@ const NiuNiuGame = ({ onBack }) => {
       };
     }
 
-    // 尝试所有组合找牛
     let bestNiu = null;
 
-    // 遍历所有3张牌的组合
     for (let i = 0; i < 3; i++) {
       for (let j = i + 1; j < 4; j++) {
         for (let k = j + 1; k < 5; k++) {
           const sum = values[i] + values[j] + values[k];
           if (sum % 10 === 0) {
-            // 找到了可以凑成10的倍数
             const remaining = values.filter(
               (_, idx) => idx !== i && idx !== j && idx !== k
             );
@@ -475,7 +420,6 @@ const NiuNiuGame = ({ onBack }) => {
     } else if (shouldTriggerRare(RARE_PROBABILITIES.wuHuaNiu)) {
       finalCards = generateSpecialHand("wuHuaNiu");
     } else if (shouldTriggerRare(RARE_PROBABILITIES.noNiu)) {
-      // 尝试生成没牛的牌
       let normalAttempts = 0;
       const normalMaxAttempts = 50;
       do {
@@ -489,8 +433,7 @@ const NiuNiuGame = ({ onBack }) => {
         finalCards = generateSpecialHand("niuJiu");
     } else if (shouldTriggerRare(RARE_PROBABILITIES.niuBa)) {
         finalCards = generateSpecialHand("niuBa");
-    }
-     else {
+    } else {
       finalCards = generateNormalCards();
     }
 
@@ -505,15 +448,12 @@ const NiuNiuGame = ({ onBack }) => {
     setGameResult(null);
     setRevealedCards([false, false, false, false, false]);
 
-    // 生成牌，优先尝试没牛
     const finalCards = generateCardsWithNoNiuPreference();
 
-    // Set initial cards immediately
     setCards(finalCards);
 
-    // Sequentially reveal cards
-    const fastInterval = 500; // Time between first three cards (ms)
-    const slowInterval = 1000; // Time between last two cards (ms)
+    const fastInterval = 500;
+    const slowInterval = 1000;
     finalCards.forEach((_, index) => {
       const delay =
         index < 3
@@ -526,7 +466,6 @@ const NiuNiuGame = ({ onBack }) => {
           return newRevealed;
         });
 
-        // When all cards are revealed, show result
         if (index === finalCards.length - 1) {
           setTimeout(() => {
             const result = checkNiuNiuResult(finalCards);
@@ -625,35 +564,36 @@ const styles = {
   container: {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-    padding: "20px",
+    padding: "clamp(10px, 3vw, 20px)",
     fontFamily: "system-ui, -apple-system, sans-serif",
   },
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: "30px",
-    gap: "15px",
+    marginBottom: "clamp(15px, 4vw, 30px)",
+    gap: "10px",
   },
   backBtn: {
-    padding: "10px 20px",
-    fontSize: "16px",
+    padding: "clamp(8px, 2vw, 10px) clamp(12px, 3vw, 20px)",
+    fontSize: "clamp(14px, 3.5vw, 16px)",
     backgroundColor: "#fff",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
     transition: "all 0.3s",
+    whiteSpace: "nowrap",
   },
   title: {
-    fontSize: "28px",
+    fontSize: "clamp(20px, 5vw, 28px)",
     color: "#fff",
     margin: 0,
     textAlign: "center",
     flex: 1,
   },
   spacer: {
-    width: "100px",
+    width: "clamp(60px, 15vw, 100px)",
   },
   gameArea: {
     maxWidth: "800px",
@@ -663,16 +603,16 @@ const styles = {
   cardsContainer: {
     display: "flex",
     justifyContent: "center",
-    gap: "15px",
+    gap: "clamp(8px, 2vw, 15px)",
     flexWrap: "wrap",
-    marginBottom: "30px",
-    minHeight: "180px",
+    marginBottom: "clamp(20px, 4vw, 30px)",
+    minHeight: "clamp(140px, 30vw, 180px)",
   },
   card: {
-    width: "120px",
-    height: "170px",
+    width: "clamp(70px, 18vw, 120px)",
+    height: "clamp(100px, 25vw, 170px)",
     backgroundColor: "#fff",
-    borderRadius: "12px",
+    borderRadius: "clamp(8px, 2vw, 12px)",
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
     display: "flex",
     flexDirection: "column",
@@ -685,76 +625,67 @@ const styles = {
     animation: "cardFlip 0.5s ease-in-out infinite",
   },
   cardSuit: {
-    fontSize: "40px",
+    fontSize: "clamp(24px, 8vw, 40px)",
     fontWeight: "bold",
-    marginBottom: "8px",
+    marginBottom: "clamp(4px, 1.5vw, 8px)",
   },
   cardRank: {
-    fontSize: "32px",
+    fontSize: "clamp(20px, 6vw, 32px)",
     fontWeight: "bold",
   },
   resultBox: {
     backgroundColor: "rgba(255,255,255,0.95)",
-    borderRadius: "16px",
-    padding: "25px",
-    margin: "30px auto",
+    borderRadius: "clamp(12px, 3vw, 16px)",
+    padding: "clamp(15px, 4vw, 25px)",
+    margin: "clamp(20px, 4vw, 30px) auto",
     maxWidth: "500px",
     border: "3px solid",
     boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
   },
   resultName: {
-    fontSize: "32px",
+    fontSize: "clamp(24px, 6vw, 32px)",
     fontWeight: "bold",
-    margin: "0 0 15px 0",
+    margin: "0 0 clamp(10px, 2vw, 15px) 0",
   },
   resultDetails: {
     display: "flex",
     justifyContent: "center",
-    gap: "20px",
-    marginBottom: "15px",
+    gap: "clamp(15px, 3vw, 20px)",
+    marginBottom: "clamp(10px, 2vw, 15px)",
+    flexWrap: "wrap",
   },
   multiplier: {
-    fontSize: "24px",
+    fontSize: "clamp(18px, 4.5vw, 24px)",
     fontWeight: "bold",
     color: "#059669",
     backgroundColor: "#d1fae5",
-    padding: "5px 15px",
+    padding: "clamp(4px, 1vw, 5px) clamp(12px, 3vw, 15px)",
     borderRadius: "20px",
   },
   description: {
-    fontSize: "18px",
+    fontSize: "clamp(14px, 3.5vw, 18px)",
     color: "#4b5563",
     margin: 0,
   },
   buttonContainer: {
     display: "flex",
     justifyContent: "center",
-    gap: "20px",
-    marginTop: "20px",
+    gap: "clamp(15px, 3vw, 20px)",
+    marginTop: "clamp(15px, 3vw, 20px)",
+    flexWrap: "wrap",
   },
   rollBtn: {
-    padding: "18px 50px",
-    fontSize: "22px",
+    padding: "clamp(12px, 3vw, 18px) clamp(30px, 8vw, 50px)",
+    fontSize: "clamp(16px, 4vw, 22px)",
     fontWeight: "bold",
     backgroundColor: "#10b981",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "clamp(10px, 2vw, 12px)",
     cursor: "pointer",
     transition: "all 0.3s",
     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.4)",
-  },
-  testBtn: {
-    padding: "18px 50px",
-    fontSize: "22px",
-    fontWeight: "bold",
-    backgroundColor: "#3b82f6",
-    color: "#fff",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    transition: "all 0.3s",
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
+    whiteSpace: "nowrap",
   },
   rollBtnDisabled: {
     backgroundColor: "#6b7280",
@@ -762,77 +693,47 @@ const styles = {
     opacity: 0.7,
   },
   rollingStatus: {
-    marginTop: "20px",
-    fontSize: "20px",
+    marginTop: "clamp(15px, 3vw, 20px)",
+    fontSize: "clamp(16px, 4vw, 20px)",
     color: "#fbbf24",
     fontWeight: "bold",
     animation: "pulse 1s ease-in-out infinite",
   },
-  testResultsContainer: {
-    maxWidth: "600px",
-    margin: "40px auto",
-    backgroundColor: "rgba(255,255,255,0.95)",
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-  },
-  testResultsTitle: {
-    fontSize: "24px",
-    color: "#1f2937",
-    marginBottom: "20px",
-    textAlign: "center",
-  },
-  testResultsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  testResultItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "10px",
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: "8px",
-    fontSize: "16px",
-  },
-  testResultName: {
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  testResultCount: {
-    color: "#4b5563",
-  },
   historySection: {
     maxWidth: "600px",
-    margin: "40px auto 0",
+    margin: "clamp(20px, 5vw, 40px) auto 0",
     backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: "12px",
-    padding: "20px",
+    borderRadius: "clamp(10px, 2vw, 12px)",
+    padding: "clamp(15px, 3vw, 20px)",
     backdropFilter: "blur(10px)",
   },
   historyTitle: {
     color: "#fff",
-    fontSize: "20px",
-    marginBottom: "15px",
+    fontSize: "clamp(16px, 4vw, 20px)",
+    marginBottom: "clamp(10px, 2vw, 15px)",
   },
   historyList: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
+    gap: "clamp(8px, 1.5vw, 10px)",
   },
   historyItem: {
     display: "flex",
     justifyContent: "space-between",
-    padding: "12px",
+    padding: "clamp(10px, 2vw, 12px)",
     backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: "8px",
-    fontSize: "14px",
+    fontSize: "clamp(12px, 3vw, 14px)",
+    gap: "10px",
+    flexWrap: "wrap",
   },
   historyTime: {
     color: "#6b7280",
+    fontSize: "clamp(11px, 2.5vw, 14px)",
   },
   historyResult: {
     fontWeight: "bold",
+    fontSize: "clamp(12px, 3vw, 14px)",
   },
 };
 
@@ -846,6 +747,13 @@ styleSheet.textContent = `
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+  }
+  
+  /* Mobile-specific adjustments */
+  @media (max-width: 480px) {
+    button:active {
+      transform: scale(0.95);
+    }
   }
 `;
 document.head.appendChild(styleSheet);
