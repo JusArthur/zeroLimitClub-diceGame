@@ -16,6 +16,40 @@ const NiuNiuGame = ({ onBack }) => {
     false,
   ]);
 
+  // Local storage utility functions
+  const saveToStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error("保存失败:", e);
+    }
+  };
+
+  const getFromStorage = (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (e) {
+      console.error("读取失败:", e);
+      return null;
+    }
+  };
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    const saved = getFromStorage("niuNiuHistory");
+    if (saved) {
+      setHistory(saved);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it updates
+  useEffect(() => {
+    if (history.length > 0) {
+      saveToStorage("niuNiuHistory", history);
+    }
+  }, [history]);
+
   // 可调节的概率配置 (0-1之间，越小越稀有)
   const RARE_PROBABILITIES = {
     wuHuaNiu: 0.0003, // 五花牛 0.03%
