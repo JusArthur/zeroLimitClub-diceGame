@@ -603,16 +603,16 @@ const styles = {
   cardsContainer: {
     display: "flex",
     justifyContent: "center",
-    gap: "clamp(8px, 2vw, 15px)",
+    gap: "clamp(5px, 1.5vw, 15px)",
     flexWrap: "wrap",
     marginBottom: "clamp(20px, 4vw, 30px)",
-    minHeight: "clamp(140px, 30vw, 180px)",
+    minHeight: "clamp(120px, 25vw, 180px)",
   },
   card: {
-    width: "clamp(70px, 18vw, 120px)",
-    height: "clamp(100px, 25vw, 170px)",
+    width: "clamp(60px, 16vw, 120px)",
+    height: "clamp(85px, 22vw, 170px)",
     backgroundColor: "#fff",
-    borderRadius: "clamp(8px, 2vw, 12px)",
+    borderRadius: "clamp(6px, 1.5vw, 12px)",
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
     display: "flex",
     flexDirection: "column",
@@ -625,12 +625,12 @@ const styles = {
     animation: "cardFlip 0.5s ease-in-out infinite",
   },
   cardSuit: {
-    fontSize: "clamp(24px, 8vw, 40px)",
+    fontSize: "clamp(20px, 6.5vw, 40px)",
     fontWeight: "bold",
-    marginBottom: "clamp(4px, 1.5vw, 8px)",
+    marginBottom: "clamp(2px, 1vw, 8px)",
   },
   cardRank: {
-    fontSize: "clamp(20px, 6vw, 32px)",
+    fontSize: "clamp(16px, 5vw, 32px)",
     fontWeight: "bold",
   },
   resultBox: {
