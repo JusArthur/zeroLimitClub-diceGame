@@ -11,95 +11,75 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   const [gameStatus, setGameStatus] = useState("playing");
   const [revealedCount, setRevealedCount] = useState(0);
   const [gameHistory, setGameHistory] = useState([]);
-  const [canPlay, setCanPlay] = useState(true);
-  const [timeRemaining, setTimeRemaining] = useState(null);
   const [showRestartWarning, setShowRestartWarning] = useState(false);
+  const [currentGameId, setCurrentGameId] = useState(null);
 
   // 存储键名根据网格大小区分
-  const STORAGE_KEY_PLAY = `minesweeper_last_play_${GRID_SIZE}x${GRID_SIZE}`;
   const STORAGE_KEY_HISTORY = `minesweeper_history_${GRID_SIZE}x${GRID_SIZE}`;
-
-  // 检查是否可以玩游戏
-  const checkPlayPermission = useCallback(() => {
-    const lastPlayTime = localStorage.getItem(STORAGE_KEY_PLAY);
-    if (!lastPlayTime) {
-      return { canPlay: true, timeRemaining: null };
-    }
-
-    const lastPlay = new Date(parseInt(lastPlayTime));
-    const now = new Date();
-    const timeDiff = now - lastPlay;
-    const hoursRemaining = 24 - (timeDiff / (1000 * 60 * 60));
-
-    if (hoursRemaining > 0) {
-      return { 
-        canPlay: false, 
-        timeRemaining: Math.ceil(hoursRemaining * 60) // 转换为分钟
-      };
-    }
-
-    return { canPlay: true, timeRemaining: null };
-  }, [STORAGE_KEY_PLAY]);
 
   // 加载游戏历史
   const loadGameHistory = useCallback(() => {
     const history = localStorage.getItem(STORAGE_KEY_HISTORY);
+    let parsed = [];
     if (history) {
       try {
-        setGameHistory(JSON.parse(history));
+        parsed = JSON.parse(history);
       } catch (e) {
-        setGameHistory([]);
+        parsed = [];
       }
     }
+    // 如果有未完成的进行中游戏（例如页面刷新），转换为未完成
+    if (parsed.length > 0 && parsed[0].result === '进行中') {
+      parsed[0].result = '未完成';
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(parsed));
+    }
+    setGameHistory(parsed);
   }, [STORAGE_KEY_HISTORY]);
 
   // 保存游戏记录
   const saveGameRecord = useCallback((status, score, isManualRestart = false) => {
     const now = new Date();
-    const record = {
-      date: now.toLocaleDateString('zh-CN'),
-      time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      result: status === 'won' ? '获胜' : (status === 'lost' ? '失败' : '未完成'),
-      score: `${score}/${SAFE_CELLS}`,
-      timestamp: now.getTime(),
-      isManualRestart: isManualRestart
-    };
+    const newResult = status === 'won' ? '获胜' :
+                      status === 'lost' ? '失败' :
+                      status === 'playing' ? '进行中' : '未完成';
+    const newScore = `${score}/${SAFE_CELLS}`;
 
     const history = JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY) || '[]');
-    history.unshift(record);
-    
+
+    const isUpdate = history.length > 0 && 
+                     history[0].gameId === currentGameId && 
+                     history[0].result === '进行中';
+
+    if (isUpdate) {
+      // 更新现有记录
+      history[0].result = newResult;
+      history[0].score = newScore;
+      history[0].time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      if (status === 'incomplete') {
+        history[0].isManualRestart = isManualRestart;
+      }
+    } else {
+      // 创建新记录
+      const record = {
+        date: now.toLocaleDateString('zh-CN'),
+        time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        result: newResult,
+        score: newScore,
+        timestamp: now.getTime(),
+        isManualRestart: isManualRestart,
+        gameId: currentGameId
+      };
+      history.unshift(record);
+    }
+
     // 只保留最近10条记录
     const limitedHistory = history.slice(0, 10);
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(limitedHistory));
     setGameHistory(limitedHistory);
-
-    // 只有在踩雷失败时才设置24小时限制
-    if (status === 'lost') {
-      localStorage.setItem(STORAGE_KEY_PLAY, now.getTime().toString());
-      setCanPlay(false);
-      setTimeRemaining(24 * 60); // 24小时转分钟
-    }
-    // 获胜时也设置限制
-    else if (status === 'won') {
-      localStorage.setItem(STORAGE_KEY_PLAY, now.getTime().toString());
-      setCanPlay(false);
-      setTimeRemaining(24 * 60);
-    }
-    // 未完成(中途重开)不设置限制
-  }, [SAFE_CELLS, STORAGE_KEY_HISTORY, STORAGE_KEY_PLAY]);
+  }, [SAFE_CELLS, STORAGE_KEY_HISTORY, currentGameId]);
 
   // 初始化游戏
   const initGame = useCallback((forceRestart = false) => {
-    if (!forceRestart) {
-      const permission = checkPlayPermission();
-      
-      if (!permission.canPlay) {
-        setCanPlay(false);
-        setTimeRemaining(permission.timeRemaining);
-        return;
-      }
-    }
-
     const minePos = Math.floor(Math.random() * TOTAL_CELLS);
 
     const newGrid = Array(TOTAL_CELLS).fill(false);
@@ -110,42 +90,17 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
     setGameStatus("playing");
     setRevealedCount(0);
     setShowRestartWarning(false);
-    if (forceRestart) {
-      setCanPlay(true);
-    }
-  }, [TOTAL_CELLS, checkPlayPermission]);
+    setCurrentGameId(Math.random().toString(36).substring(2));
+  }, [TOTAL_CELLS]);
 
   useEffect(() => {
     loadGameHistory();
-    const permission = checkPlayPermission();
-    if (permission.canPlay) {
-      initGame();
-    } else {
-      setCanPlay(false);
-      setTimeRemaining(permission.timeRemaining);
-    }
-  }, [initGame, loadGameHistory, checkPlayPermission]);
-
-  // 倒计时更新
-  useEffect(() => {
-    if (!canPlay && timeRemaining > 0) {
-      const timer = setInterval(() => {
-        const permission = checkPlayPermission();
-        if (permission.canPlay) {
-          setCanPlay(true);
-          setTimeRemaining(null);
-        } else {
-          setTimeRemaining(permission.timeRemaining);
-        }
-      }, 60000); // 每分钟更新一次
-
-      return () => clearInterval(timer);
-    }
-  }, [canPlay, timeRemaining, checkPlayPermission]);
+    initGame();
+  }, [initGame, loadGameHistory]);
 
   // 处理点击格子
   const handleCellClick = (index) => {
-    if (gameStatus !== "playing" || revealed[index] || !canPlay) return;
+    if (gameStatus !== "playing" || revealed[index]) return;
 
     const newRevealed = [...revealed];
     newRevealed[index] = true;
@@ -161,6 +116,9 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       const newCount = revealedCount + 1;
       setRevealedCount(newCount);
 
+      // 实时更新记录
+      saveGameRecord('playing', newCount);
+
       if (newCount === SAFE_CELLS) {
         setGameStatus("won");
         setRevealed(Array(TOTAL_CELLS).fill(true));
@@ -171,11 +129,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
 
   // 处理重新开始按钮点击
   const handleRestartClick = () => {
-    // 如果已经被限制（踩雷或获胜后），不能重新开始
-    if (!canPlay) {
-      return;
-    }
-    
     // 如果游戏已经结束或者还没开始玩，直接重新开始
     if (gameStatus !== "playing" || revealedCount === 0) {
       initGame(true);
@@ -189,8 +142,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   const confirmRestart = () => {
     // 保存当前未完成的游戏记录
     saveGameRecord('incomplete', revealedCount, true);
-    // 清除上次游玩时间限制,允许重新开始
-    localStorage.removeItem(STORAGE_KEY_PLAY);
     // 重新开始游戏
     initGame(true);
   };
@@ -198,16 +149,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   // 取消重新开始
   const cancelRestart = () => {
     setShowRestartWarning(false);
-  };
-
-  // 测试用：重置时间限制
-  const resetTimeLimit = () => {
-    if (window.confirm('测试功能：确认重置24小时限制？')) {
-      localStorage.removeItem(STORAGE_KEY_PLAY);
-      setCanPlay(true);
-      setTimeRemaining(null);
-      alert('时间限制已重置！');
-    }
   };
 
   // 格子内容
@@ -228,14 +169,13 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       border: "2px solid #d1d5db",
       borderRadius: "8px",
       background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
-      cursor: canPlay && gameStatus === "playing" ? "pointer" : "not-allowed",
+      cursor: gameStatus === "playing" ? "pointer" : "not-allowed",
       fontSize: GRID_SIZE === 5 ? "24px" : "20px",
       fontWeight: "bold",
       transition: "all 0.2s ease",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      opacity: canPlay ? 1 : 0.5,
     };
 
     if (revealed[index]) {
@@ -245,7 +185,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           border: "2px solid #ef4444",
           background: "linear-gradient(135deg, #fee2e2, #fecaca)",
           cursor: "default",
-          opacity: 1,
         };
       } else {
         return {
@@ -254,20 +193,11 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
           color: "#065f46",
           cursor: "default",
-          opacity: 1,
         };
       }
     }
 
     return baseStyle;
-  };
-
-  // 格式化剩余时间
-  const formatTimeRemaining = () => {
-    if (!timeRemaining) return "";
-    const hours = Math.floor(timeRemaining / 60);
-    const minutes = timeRemaining % 60;
-    return `${hours}小时${minutes}分钟`;
   };
 
   return (
@@ -278,9 +208,9 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           ← 返回
         </button>
 
-        {/* 测试按钮 */}
-        <button onClick={resetTimeLimit} style={styles.testBtn}>
-          🔧 测试重置
+        {/* 重新开始按钮（替换原测试重置位置） */}
+        <button onClick={handleRestartClick} style={styles.testBtn}>
+          🔄 重新开始
         </button>
 
         {/* Logo */}
@@ -292,17 +222,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
 
         <h1 style={styles.title}>💣 扫雷游戏 ({GRID_SIZE}×{GRID_SIZE})</h1>
 
-        {/* 游戏限制提示 */}
-        {!canPlay && (
-          <div style={styles.restrictionBox}>
-            <h3 style={styles.restrictionTitle}>⏰ 今日游戏次数已用完</h3>
-            <p style={styles.restrictionText}>
-              剩余时间: {formatTimeRemaining()}
-            </p>
-            <p style={styles.restrictionHint}>每24小时只能玩一次哦!</p>
-          </div>
-        )}
-
         {/* 游戏信息 */}
         <div style={styles.infoBox}>
           <p style={styles.infoText}>
@@ -312,6 +231,9 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
             </span>
           </p>
           <p style={styles.ruleText}>找出所有安全格子,若踩到地雷则游戏结束!</p>
+          {gameStatus === "playing" && revealedCount > 0 && (
+            <p style={styles.autoSaveHint}>💾 进度实时保存中...</p>
+          )}
         </div>
 
         {/* 游戏结果 */}
@@ -378,26 +300,13 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
               <button
                 onClick={() => handleCellClick(index)}
                 style={getCellStyle(index)}
-                disabled={gameStatus !== "playing" || revealed[index] || !canPlay}
+                disabled={gameStatus !== "playing" || revealed[index]}
               >
                 {getCellContent(index)}
               </button>
             </div>
           ))}
         </div>
-
-        {/* 重新开始按钮 */}
-        <button 
-          onClick={handleRestartClick}
-          style={{
-            ...styles.restartBtn,
-            opacity: canPlay ? 1 : 0.5,
-            cursor: canPlay ? 'pointer' : 'not-allowed'
-          }}
-          disabled={!canPlay}
-        >
-          🔄 重新开始
-        </button>
 
         {/* 游戏历史记录 */}
         {gameHistory.length > 0 && (
@@ -411,7 +320,9 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
                   </span>
                   <span style={{
                     ...styles.historyResult,
-                    color: record.result === '获胜' ? '#059669' : (record.result === '失败' ? '#dc2626' : '#f59e0b')
+                    color: record.result === '获胜' ? '#059669' : 
+                          (record.result === '失败' ? '#dc2626' : 
+                          (record.result === '进行中' ? '#2563eb' : '#f59e0b'))
                   }}>
                     {record.result}
                     {record.isManualRestart && ' (中途重开)'}
@@ -429,7 +340,7 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
             Zero Limit Breakthrough Club - 扫雷挑战
           </p>
           <p style={styles.hintText}>
-            💣 {GRID_SIZE}×{GRID_SIZE}网格 · 1个地雷 · {SAFE_CELLS}个安全格 · 每日一次
+            💣 {GRID_SIZE}×{GRID_SIZE}网格 · 1个地雷 · {SAFE_CELLS}个安全格
           </p>
         </div>
       </div>
