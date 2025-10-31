@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+// MinesweeperGame.jsx
+// A 7x7 Minesweeper mini-game component
+
+import React, { useState, useEffect, useCallback } from "react";
 
 const MinesweeperGame = ({ onBack }) => {
   const GRID_SIZE = 7;
@@ -10,12 +13,10 @@ const MinesweeperGame = ({ onBack }) => {
   const [revealed, setRevealed] = useState([]);
   const [gameStatus, setGameStatus] = useState("playing");
   const [revealedCount, setRevealedCount] = useState(0);
-  const [minePosition, setMinePosition] = useState(null);
 
-  // 初始化游戏
-  const initGame = () => {
+  // Initialize the game
+  const initGame = useCallback(() => {
     const minePos = Math.floor(Math.random() * TOTAL_CELLS);
-    setMinePosition(minePos);
 
     const newGrid = Array(TOTAL_CELLS).fill(false);
     newGrid[minePos] = true;
@@ -24,13 +25,13 @@ const MinesweeperGame = ({ onBack }) => {
     setRevealed(Array(TOTAL_CELLS).fill(false));
     setGameStatus("playing");
     setRevealedCount(0);
-  };
+  }, [TOTAL_CELLS]);
 
   useEffect(() => {
     initGame();
-  }, []);
+  }, [initGame]);
 
-  // 点击格子
+  // Handle cell click
   const handleCellClick = (index) => {
     if (gameStatus !== "playing" || revealed[index]) return;
 
@@ -39,12 +40,14 @@ const MinesweeperGame = ({ onBack }) => {
     setRevealed(newRevealed);
 
     if (grid[index]) {
+      // Hit a mine
       setGameStatus("lost");
       setRevealed(Array(TOTAL_CELLS).fill(true));
     } else {
+      // Safe cell
       const newCount = revealedCount + 1;
       setRevealedCount(newCount);
-      
+
       if (newCount === SAFE_CELLS) {
         setGameStatus("won");
         setRevealed(Array(TOTAL_CELLS).fill(true));
@@ -52,14 +55,14 @@ const MinesweeperGame = ({ onBack }) => {
     }
   };
 
-  // 获取格子内容
+  // Cell content
   const getCellContent = (index) => {
     if (!revealed[index]) return "";
     if (grid[index]) return "💣";
     return "✓";
   };
 
-  // 获取格子样式
+  // Cell style
   const getCellStyle = (index) => {
     const baseStyle = {
       position: "absolute",
@@ -78,7 +81,7 @@ const MinesweeperGame = ({ onBack }) => {
       alignItems: "center",
       justifyContent: "center",
     };
-    
+
     if (revealed[index]) {
       if (grid[index]) {
         return {
@@ -97,14 +100,14 @@ const MinesweeperGame = ({ onBack }) => {
         };
       }
     }
-    
+
     return baseStyle;
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.gameBox}>
-        {/* 返回按钮 */}
+        {/* Back Button */}
         <button onClick={onBack} style={styles.backBtn}>
           ← 返回主菜单
         </button>
@@ -118,37 +121,45 @@ const MinesweeperGame = ({ onBack }) => {
 
         <h1 style={styles.title}>💣 扫雷游戏</h1>
 
-        {/* 游戏信息 */}
+        {/* Info */}
         <div style={styles.infoBox}>
           <p style={styles.infoText}>
-            安全格子: <span style={styles.infoNumber}>{revealedCount}/{SAFE_CELLS}</span>
+            安全格子:{" "}
+            <span style={styles.infoNumber}>
+              {revealedCount}/{SAFE_CELLS}
+            </span>
           </p>
           <p style={styles.ruleText}>找出所有安全格子,若踩到地雷则游戏结束!</p>
         </div>
 
-        {/* 游戏状态 */}
+        {/* Result */}
         {gameStatus !== "playing" && (
-          <div style={{
-            ...styles.resultBox,
-            background: gameStatus === "won" 
-              ? "linear-gradient(135deg, #d1fae5, #a7f3d0)"
-              : "linear-gradient(135deg, #fee2e2, #fecaca)"
-          }}>
-            <h2 style={{
-              ...styles.resultTitle,
-              color: gameStatus === "won" ? "#065f46" : "#991b1b"
-            }}>
+          <div
+            style={{
+              ...styles.resultBox,
+              background:
+                gameStatus === "won"
+                  ? "linear-gradient(135deg, #d1fae5, #a7f3d0)"
+                  : "linear-gradient(135deg, #fee2e2, #fecaca)",
+            }}
+          >
+            <h2
+              style={{
+                ...styles.resultTitle,
+                color: gameStatus === "won" ? "#065f46" : "#991b1b",
+              }}
+            >
               {gameStatus === "won" ? "🎉 恭喜获胜!" : "💥 游戏结束!"}
             </h2>
             <p style={styles.resultDesc}>
-              {gameStatus === "won" 
+              {gameStatus === "won"
                 ? "成功避开地雷,找出所有安全格子!"
                 : "踩到地雷了，很遗憾游戏结束!"}
             </p>
           </div>
         )}
 
-        {/* 游戏网格 */}
+        {/* Grid */}
         <div style={styles.gridContainer}>
           {grid.map((_, index) => (
             <div key={index} style={styles.cellWrapper}>
@@ -163,12 +174,12 @@ const MinesweeperGame = ({ onBack }) => {
           ))}
         </div>
 
-        {/* 重新开始按钮 */}
+        {/* Restart Button */}
         <button onClick={initGame} style={styles.restartBtn}>
           🔄 重新开始
         </button>
 
-        {/* 底部信息 */}
+        {/* Footer */}
         <div style={styles.footer}>
           <p style={styles.footerText}>
             Zero Limit Breakthrough Club - 扫雷挑战
@@ -183,12 +194,14 @@ const MinesweeperGame = ({ onBack }) => {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #14b8a6 100%)",
+    background:
+      "linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #14b8a6 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "16px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+    fontFamily:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
   },
   gameBox: {
     background: "white",
