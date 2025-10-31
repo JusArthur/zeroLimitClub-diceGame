@@ -12,7 +12,8 @@ const DiceGame = () => {
   const [gameResult, setGameResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyCollapsed, setHistoryCollapsed] = useState(true);
-
+  const [minesweeperSize, setMinesweeperSize] = useState(7);
+  
   // localStorage 工具函数(替代 cookie)
   const saveToStorage = (key, value) => {
     try {
@@ -242,7 +243,7 @@ const DiceGame = () => {
       setStep("menu");
 
     } else if (step === "minesweeper") {
-      setStep("menu");
+      setStep("minesweeper-select");
     }
      else {
       setStep("select");
@@ -308,10 +309,10 @@ const DiceGame = () => {
 
               <button
                 className="mode-box"
-                onClick={() => setStep("minesweeper")}
+                onClick={() => setStep("minesweeper-select")}
               >
                 💣 扫雷游戏
-                <p className="mode-desc">7×7网格 · 扫雷挑战</p>
+                <p className="mode-desc">多种模式 · 扫雷挑战</p>
               </button>
             </div>
           </div>
@@ -329,7 +330,56 @@ const DiceGame = () => {
       </div>
     );
   }
-
+  if (step === "minesweeper-select") {
+    return (
+      <div className="app-container">
+        <div className="select-container">
+          <button onClick={() => setStep("menu")} className="back-btn">
+            ← 返回主菜单
+          </button>
+          
+          <div className="club-logo">
+            <img src={logo} alt="零界突破俱乐部" className="logo-image" />
+          </div>
+          <h1 className="main-title">💣 扫雷游戏</h1>
+  
+          <div className="select-section">
+            <h2 className="section-title">选择网格大小</h2>
+            <div className="game-mode-grid">
+              <button
+                className="mode-box"
+                onClick={() => {
+                  setMinesweeperSize(5);
+                  setStep("minesweeper");
+                }}
+              >
+                💣 5×5 网格
+                <p className="mode-desc">简单模式 · 24个安全格</p>
+              </button>
+  
+              <button
+                className="mode-box"
+                onClick={() => {
+                  setMinesweeperSize(7);
+                  setStep("minesweeper");
+                }}
+              >
+                💣 7×7 网格
+                <p className="mode-desc">标准模式 · 48个安全格</p>
+              </button>
+            </div>
+          </div>
+  
+          <div className="club-trademark">
+            <p className="trademark-text">
+              © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
+            </p>
+            <p className="club-slogan">突破极限,创造无限可能</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (step === "select") {
     return (
       <div className="app-container">
@@ -385,7 +435,7 @@ const DiceGame = () => {
     return <NiuNiuGame onBack={goBack} />;
   }
   if (step === "minesweeper") {
-    return <MinesweeperGame onBack={goBack} />;
+    return <MinesweeperGame onBack={() => setStep("minesweeper-select")} gridSize={minesweeperSize} />;
   }
   return (
     <div className="app-container">

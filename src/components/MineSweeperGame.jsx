@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 
-const MinesweeperGame = ({ onBack }) => {
-  const GRID_SIZE = 7;
+const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
+  const GRID_SIZE = gridSize;
   const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
   const MINE_COUNT = 1;
   const SAFE_CELLS = TOTAL_CELLS - MINE_COUNT;
@@ -15,9 +15,13 @@ const MinesweeperGame = ({ onBack }) => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [showRestartWarning, setShowRestartWarning] = useState(false);
 
+  // 存储键名根据网格大小区分
+  const STORAGE_KEY_PLAY = `minesweeper_last_play_${GRID_SIZE}x${GRID_SIZE}`;
+  const STORAGE_KEY_HISTORY = `minesweeper_history_${GRID_SIZE}x${GRID_SIZE}`;
+
   // 检查是否可以玩游戏
   const checkPlayPermission = useCallback(() => {
-    const lastPlayTime = localStorage.getItem('minesweeper_last_play');
+    const lastPlayTime = localStorage.getItem(STORAGE_KEY_PLAY);
     if (!lastPlayTime) {
       return { canPlay: true, timeRemaining: null };
     }
@@ -35,11 +39,11 @@ const MinesweeperGame = ({ onBack }) => {
     }
 
     return { canPlay: true, timeRemaining: null };
-  }, []);
+  }, [STORAGE_KEY_PLAY]);
 
   // 加载游戏历史
   const loadGameHistory = useCallback(() => {
-    const history = localStorage.getItem('minesweeper_history');
+    const history = localStorage.getItem(STORAGE_KEY_HISTORY);
     if (history) {
       try {
         setGameHistory(JSON.parse(history));
@@ -47,7 +51,7 @@ const MinesweeperGame = ({ onBack }) => {
         setGameHistory([]);
       }
     }
-  }, []);
+  }, [STORAGE_KEY_HISTORY]);
 
   // 保存游戏记录
   const saveGameRecord = useCallback((status, score, isManualRestart = false) => {
@@ -61,28 +65,28 @@ const MinesweeperGame = ({ onBack }) => {
       isManualRestart: isManualRestart
     };
 
-    const history = JSON.parse(localStorage.getItem('minesweeper_history') || '[]');
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY) || '[]');
     history.unshift(record);
     
     // 只保留最近10条记录
     const limitedHistory = history.slice(0, 10);
-    localStorage.setItem('minesweeper_history', JSON.stringify(limitedHistory));
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(limitedHistory));
     setGameHistory(limitedHistory);
 
     // 只有在踩雷失败时才设置24小时限制
     if (status === 'lost') {
-      localStorage.setItem('minesweeper_last_play', now.getTime().toString());
+      localStorage.setItem(STORAGE_KEY_PLAY, now.getTime().toString());
       setCanPlay(false);
       setTimeRemaining(24 * 60); // 24小时转分钟
     }
-    // 获胜时也设置限制(可选,根据需求)
+    // 获胜时也设置限制
     else if (status === 'won') {
-      localStorage.setItem('minesweeper_last_play', now.getTime().toString());
+      localStorage.setItem(STORAGE_KEY_PLAY, now.getTime().toString());
       setCanPlay(false);
       setTimeRemaining(24 * 60);
     }
     // 未完成(中途重开)不设置限制
-  }, [SAFE_CELLS]);
+  }, [SAFE_CELLS, STORAGE_KEY_HISTORY, STORAGE_KEY_PLAY]);
 
   // 初始化游戏
   const initGame = useCallback((forceRestart = false) => {
@@ -186,7 +190,7 @@ const MinesweeperGame = ({ onBack }) => {
     // 保存当前未完成的游戏记录
     saveGameRecord('incomplete', revealedCount, true);
     // 清除上次游玩时间限制,允许重新开始
-    localStorage.removeItem('minesweeper_last_play');
+    localStorage.removeItem(STORAGE_KEY_PLAY);
     // 重新开始游戏
     initGame(true);
   };
@@ -194,6 +198,16 @@ const MinesweeperGame = ({ onBack }) => {
   // 取消重新开始
   const cancelRestart = () => {
     setShowRestartWarning(false);
+  };
+
+  // 测试用：重置时间限制
+  const resetTimeLimit = () => {
+    if (window.confirm('测试功能：确认重置24小时限制？')) {
+      localStorage.removeItem(STORAGE_KEY_PLAY);
+      setCanPlay(true);
+      setTimeRemaining(null);
+      alert('时间限制已重置！');
+    }
   };
 
   // 格子内容
@@ -215,7 +229,7 @@ const MinesweeperGame = ({ onBack }) => {
       borderRadius: "8px",
       background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
       cursor: canPlay && gameStatus === "playing" ? "pointer" : "not-allowed",
-      fontSize: "20px",
+      fontSize: GRID_SIZE === 5 ? "24px" : "20px",
       fontWeight: "bold",
       transition: "all 0.2s ease",
       display: "flex",
@@ -261,7 +275,12 @@ const MinesweeperGame = ({ onBack }) => {
       <div style={styles.gameBox}>
         {/* 返回按钮 */}
         <button onClick={onBack} style={styles.backBtn}>
-          ← 返回主菜单
+          ← 返回
+        </button>
+
+        {/* 测试按钮 */}
+        <button onClick={resetTimeLimit} style={styles.testBtn}>
+          🔧 测试重置
         </button>
 
         {/* Logo */}
@@ -271,7 +290,7 @@ const MinesweeperGame = ({ onBack }) => {
           </div>
         </div>
 
-        <h1 style={styles.title}>💣 扫雷游戏</h1>
+        <h1 style={styles.title}>💣 扫雷游戏 ({GRID_SIZE}×{GRID_SIZE})</h1>
 
         {/* 游戏限制提示 */}
         {!canPlay && (
@@ -349,7 +368,11 @@ const MinesweeperGame = ({ onBack }) => {
         )}
 
         {/* 游戏网格 */}
-        <div style={styles.gridContainer}>
+        <div style={{
+          ...styles.gridContainer,
+          gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+          maxWidth: GRID_SIZE === 5 ? "350px" : "420px",
+        }}>
           {grid.map((_, index) => (
             <div key={index} style={styles.cellWrapper}>
               <button
@@ -405,7 +428,9 @@ const MinesweeperGame = ({ onBack }) => {
           <p style={styles.footerText}>
             Zero Limit Breakthrough Club - 扫雷挑战
           </p>
-          <p style={styles.hintText}>💣 7×7网格 · 1个地雷 · 48个安全格 · 每日一次</p>
+          <p style={styles.hintText}>
+            💣 {GRID_SIZE}×{GRID_SIZE}网格 · 1个地雷 · {SAFE_CELLS}个安全格 · 每日一次
+          </p>
         </div>
       </div>
     </div>
@@ -445,6 +470,19 @@ const styles = {
     border: "none",
     cursor: "pointer",
     fontSize: "14px",
+    transition: "all 0.2s ease",
+  },
+  testBtn: {
+    position: "absolute",
+    top: "20px",
+    right: "20px",
+    background: "#ef4444",
+    color: "white",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "12px",
     transition: "all 0.2s ease",
   },
   logoContainer: {
@@ -618,10 +656,8 @@ const styles = {
   },
   gridContainer: {
     display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
     gap: "8px",
     marginBottom: "24px",
-    maxWidth: "420px",
     margin: "0 auto 24px auto",
   },
   cellWrapper: {
