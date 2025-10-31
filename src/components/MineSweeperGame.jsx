@@ -143,7 +143,7 @@ const MinesweeperGame = ({ onBack }) => {
             <p style={styles.resultDesc}>
               {gameStatus === "won" 
                 ? "成功避开地雷,找出所有安全格子!"
-                : "踩到地雷了,再试一次吧!"}
+                : "踩到地雷了，很遗憾游戏结束!"}
             </p>
           </div>
         )}
