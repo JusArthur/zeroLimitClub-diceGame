@@ -8,22 +8,19 @@ const MinesweeperGame = ({ onBack }) => {
 
   const [grid, setGrid] = useState([]);
   const [revealed, setRevealed] = useState([]);
-  const [gameStatus, setGameStatus] = useState("playing"); // playing, won, lost
+  const [gameStatus, setGameStatus] = useState("playing");
   const [revealedCount, setRevealedCount] = useState(0);
   const [minePosition, setMinePosition] = useState(null);
 
   // 初始化游戏
   const initGame = () => {
-    // 生成随机地雷位置
     const minePos = Math.floor(Math.random() * TOTAL_CELLS);
     setMinePosition(minePos);
 
-    // 初始化网格
     const newGrid = Array(TOTAL_CELLS).fill(false);
-    newGrid[minePos] = true; // true = 地雷
+    newGrid[minePos] = true;
     setGrid(newGrid);
 
-    // 初始化revealed状态
     setRevealed(Array(TOTAL_CELLS).fill(false));
     setGameStatus("playing");
     setRevealedCount(0);
@@ -41,20 +38,15 @@ const MinesweeperGame = ({ onBack }) => {
     newRevealed[index] = true;
     setRevealed(newRevealed);
 
-    // 点到地雷
     if (grid[index]) {
       setGameStatus("lost");
-      // 显示所有格子
       setRevealed(Array(TOTAL_CELLS).fill(true));
     } else {
-      // 安全格子
       const newCount = revealedCount + 1;
       setRevealedCount(newCount);
       
-      // 检查是否获胜
       if (newCount === SAFE_CELLS) {
         setGameStatus("won");
-        // 显示所有格子
         setRevealed(Array(TOTAL_CELLS).fill(true));
       }
     }
@@ -68,18 +60,45 @@ const MinesweeperGame = ({ onBack }) => {
   };
 
   // 获取格子样式
-  const getCellClass = (index) => {
-    let classes = "mine-cell";
+  const getCellStyle = (index) => {
+    const baseStyle = {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      border: "2px solid #d1d5db",
+      borderRadius: "8px",
+      background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
+      cursor: "pointer",
+      fontSize: "20px",
+      fontWeight: "bold",
+      transition: "all 0.2s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    };
     
     if (revealed[index]) {
       if (grid[index]) {
-        classes += " mine-cell-bomb";
+        return {
+          ...baseStyle,
+          border: "2px solid #ef4444",
+          background: "linear-gradient(135deg, #fee2e2, #fecaca)",
+          cursor: "default",
+        };
       } else {
-        classes += " mine-cell-safe";
+        return {
+          ...baseStyle,
+          border: "2px solid #22c55e",
+          background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+          color: "#065f46",
+          cursor: "default",
+        };
       }
     }
     
-    return classes;
+    return baseStyle;
   };
 
   return (
@@ -104,7 +123,7 @@ const MinesweeperGame = ({ onBack }) => {
           <p style={styles.infoText}>
             安全格子: <span style={styles.infoNumber}>{revealedCount}/{SAFE_CELLS}</span>
           </p>
-          <p style={styles.ruleText}>找出所有安全格子，若踩到地雷则游戏结束！</p>
+          <p style={styles.ruleText}>找出所有安全格子,若踩到地雷则游戏结束!</p>
         </div>
 
         {/* 游戏状态 */}
@@ -119,12 +138,12 @@ const MinesweeperGame = ({ onBack }) => {
               ...styles.resultTitle,
               color: gameStatus === "won" ? "#065f46" : "#991b1b"
             }}>
-              {gameStatus === "won" ? "🎉 恭喜获胜！" : "💥 游戏结束！"}
+              {gameStatus === "won" ? "🎉 恭喜获胜!" : "💥 游戏结束!"}
             </h2>
             <p style={styles.resultDesc}>
               {gameStatus === "won" 
-                ? "成功避开地雷，找出所有安全格子！"
-                : "踩到地雷了，再试一次吧！"}
+                ? "成功避开地雷,找出所有安全格子!"
+                : "踩到地雷了,再试一次吧!"}
             </p>
           </div>
         )}
@@ -132,14 +151,15 @@ const MinesweeperGame = ({ onBack }) => {
         {/* 游戏网格 */}
         <div style={styles.gridContainer}>
           {grid.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleCellClick(index)}
-              style={styles[getCellClass(index)]}
-              disabled={gameStatus !== "playing" || revealed[index]}
-            >
-              {getCellContent(index)}
-            </button>
+            <div key={index} style={styles.cellWrapper}>
+              <button
+                onClick={() => handleCellClick(index)}
+                style={getCellStyle(index)}
+                disabled={gameStatus !== "playing" || revealed[index]}
+              >
+                {getCellContent(index)}
+              </button>
+            </div>
           ))}
         </div>
 
@@ -248,7 +268,6 @@ const styles = {
     marginBottom: "20px",
     border: "3px solid",
     borderColor: "#22c55e",
-    animation: "resultAppear 0.6s ease-out",
   },
   resultTitle: {
     fontSize: "24px",
@@ -268,46 +287,10 @@ const styles = {
     maxWidth: "420px",
     margin: "0 auto 24px auto",
   },
-  "mine-cell": {
+  cellWrapper: {
     width: "100%",
-    aspectRatio: "1",
-    border: "2px solid #d1d5db",
-    borderRadius: "8px",
-    background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
-    cursor: "pointer",
-    fontSize: "20px",
-    fontWeight: "bold",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  "mine-cell-safe": {
-    width: "100%",
-    aspectRatio: "1",
-    border: "2px solid #22c55e",
-    borderRadius: "8px",
-    background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
-    fontSize: "20px",
-    fontWeight: "bold",
-    color: "#065f46",
-    cursor: "default",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  "mine-cell-bomb": {
-    width: "100%",
-    aspectRatio: "1",
-    border: "2px solid #ef4444",
-    borderRadius: "8px",
-    background: "linear-gradient(135deg, #fee2e2, #fecaca)",
-    fontSize: "20px",
-    fontWeight: "bold",
-    cursor: "default",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingBottom: "100%",
+    position: "relative",
   },
   restartBtn: {
     width: "100%",
