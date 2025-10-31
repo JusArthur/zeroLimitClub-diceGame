@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./DiceGame.css"; // 需要引入CSS文件
 import logo from "./pic/logo.png"; // 导入本地logo图片
 import NiuNiuGame from "./components/niuniugame";
+import MinesweeperGame from "./components/MineSweeperGame";
 
 const DiceGame = () => {
   const [step, setStep] = useState("menu");
@@ -214,7 +215,7 @@ const DiceGame = () => {
       });
 
     // const finalValues = [5,5,5,5,5,5]; // 测试博饼结果用
-    // const finalValues = [2,3,4,5,1,6]; 
+    // const finalValues = [2,3,4,5,1,6];
     setTimeout(() => {
       setDiceValues(finalValues);
 
@@ -239,7 +240,11 @@ const DiceGame = () => {
       setStep("menu");
     } else if (step === "niuniu") {
       setStep("menu");
-    } else{
+
+    } else if (step === "minesweeper") {
+      setStep("menu");
+    }
+     else {
       setStep("select");
     }
     setDiceValues([]);
@@ -300,6 +305,14 @@ const DiceGame = () => {
                 🎲 骰子游戏
                 <p className="mode-desc">自由选择骰子数量</p>
               </button>
+
+              <button
+                className="mode-box"
+                onClick={() => setStep("minesweeper")}
+              >
+                💣 扫雷游戏
+                <p className="mode-desc">7×7网格 · 扫雷挑战</p>
+              </button>
             </div>
           </div>
 
@@ -308,7 +321,9 @@ const DiceGame = () => {
               © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
             </p>
             <p className="club-slogan">突破极限,创造无限可能</p>
-            <p className="club-slogan">该游戏仅供娱乐，无不良引导与金钱交易行为</p>
+            <p className="club-slogan">
+              该游戏仅供娱乐，无不良引导与金钱交易行为
+            </p>
           </div>
         </div>
       </div>
@@ -319,13 +334,10 @@ const DiceGame = () => {
     return (
       <div className="app-container">
         <div className="select-container">
-      {/* 返回按钮 */}
-        <button
-          onClick={() => setStep("menu")}
-          className="back-btn"
-        >
-          ← 返回主菜单
-        </button>
+          {/* 返回按钮 */}
+          <button onClick={() => setStep("menu")} className="back-btn">
+            ← 返回主菜单
+          </button>
           {/* 俱乐部Logo */}
           <div className="club-logo">
             <img src={logo} alt="零界突破俱乐部" className="logo-image" />
@@ -334,8 +346,7 @@ const DiceGame = () => {
 
           <div className="select-section">
             <h2 className="section-title">选择骰子数量</h2>
-            <div className="game-mode-hint">
-            </div>
+            <div className="game-mode-hint"></div>
             <div className="number-grid">
               {[1, 2, 3, 4, 5, 6].map((num) => (
                 <button
@@ -352,7 +363,7 @@ const DiceGame = () => {
           </div>
 
           <div className="selected-info">
-            <p>              已选择: {diceCount} 个骰子</p>
+            <p> 已选择: {diceCount} 个骰子</p>
           </div>
 
           <button onClick={startGame} className="start-btn">
@@ -367,12 +378,14 @@ const DiceGame = () => {
             <p className="club-slogan">突破极限,创造无限可能</p>
           </div>
         </div>
-        
       </div>
     );
   }
   if (step === "niuniu") {
     return <NiuNiuGame onBack={goBack} />;
+  }
+  if (step === "minesweeper") {
+    return <MinesweeperGame onBack={goBack} />;
   }
   return (
     <div className="app-container">
