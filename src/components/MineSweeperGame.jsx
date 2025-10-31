@@ -16,6 +16,7 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
 
   // 存储键名根据网格大小区分
   const STORAGE_KEY_HISTORY = `minesweeper_history_${GRID_SIZE}x${GRID_SIZE}`;
+  const STORAGE_KEY_STATE = `minesweeper_state_${GRID_SIZE}x${GRID_SIZE}`;
 
   // 加载游戏历史
   const loadGameHistory = useCallback(() => {
@@ -27,11 +28,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       } catch (e) {
         parsed = [];
       }
-    }
-    // 如果有未完成的进行中游戏（例如页面刷新），转换为未完成
-    if (parsed.length > 0 && parsed[0].result === '进行中') {
-      parsed[0].result = '未完成';
-      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(parsed));
     }
     setGameHistory(parsed);
   }, [STORAGE_KEY_HISTORY]);
@@ -78,8 +74,27 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
     setGameHistory(limitedHistory);
   }, [SAFE_CELLS, STORAGE_KEY_HISTORY, currentGameId]);
 
+  // 加载游戏状态
+  const loadGameState = useCallback(() => {
+    const savedState = localStorage.getItem(STORAGE_KEY_STATE);
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        if (state.gameStatus === 'playing') {
+          setGrid(state.grid);
+          setRevealed(state.revealed);
+          setGameStatus(state.gameStatus);
+          setRevealedCount(state.revealedCount);
+          setCurrentGameId(state.currentGameId);
+          return true;
+        }
+      } catch (e) {}
+    }
+    return false;
+  }, [STORAGE_KEY_STATE]);
+
   // 初始化游戏
-  const initGame = useCallback((forceRestart = false) => {
+  const initGame = useCallback(() => {
     const minePos = Math.floor(Math.random() * TOTAL_CELLS);
 
     const newGrid = Array(TOTAL_CELLS).fill(false);
@@ -95,8 +110,10 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
 
   useEffect(() => {
     loadGameHistory();
-    initGame();
-  }, [initGame, loadGameHistory]);
+    if (!loadGameState()) {
+      initGame();
+    }
+  }, [initGame, loadGameHistory, loadGameState]);
 
   // 处理点击格子
   const handleCellClick = (index) => {
@@ -111,18 +128,28 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       setGameStatus("lost");
       setRevealed(Array(TOTAL_CELLS).fill(true));
       saveGameRecord('lost', revealedCount);
+      localStorage.removeItem(STORAGE_KEY_STATE);
     } else {
       // 安全格子
       const newCount = revealedCount + 1;
       setRevealedCount(newCount);
 
-      // 实时更新记录
-      saveGameRecord('playing', newCount);
-
       if (newCount === SAFE_CELLS) {
         setGameStatus("won");
         setRevealed(Array(TOTAL_CELLS).fill(true));
         saveGameRecord('won', newCount);
+        localStorage.removeItem(STORAGE_KEY_STATE);
+      } else {
+        // 实时更新记录
+        saveGameRecord('playing', newCount);
+        // 保存当前游戏状态
+        localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
+          grid,
+          revealed: newRevealed,
+          gameStatus: "playing",
+          revealedCount: newCount,
+          currentGameId
+        }));
       }
     }
   };
@@ -131,7 +158,7 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   const handleRestartClick = () => {
     // 如果游戏已经结束或者还没开始玩，直接重新开始
     if (gameStatus !== "playing" || revealedCount === 0) {
-      initGame(true);
+      initGame();
     } else {
       // 游戏进行中，显示警告
       setShowRestartWarning(true);
@@ -142,8 +169,9 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   const confirmRestart = () => {
     // 保存当前未完成的游戏记录
     saveGameRecord('incomplete', revealedCount, true);
+    localStorage.removeItem(STORAGE_KEY_STATE);
     // 重新开始游戏
-    initGame(true);
+    initGame();
   };
 
   // 取消重新开始
