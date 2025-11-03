@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function LuckyWheel() {
+export default function LuckyWheel({ onBack }) {
   const [isFlag, setIsFlag] = useState(true);
   const [result, setResult] = useState('');
   const [rotation, setRotation] = useState(0);
@@ -18,11 +18,11 @@ export default function LuckyWheel() {
 
   // 权重和对应的角度（指针指向顶部时为0°）
   const prizeConfig = [
-    { weight: 0, angle: 0, name: prize[0] },
+    { weight: 70, angle: 0, name: prize[0] },
     { weight: 24, angle: 60, name: prize[1] },
     { weight: 4, angle: 120, name: prize[2] },
     { weight: 1, angle: 180, name: prize[3] },
-    { weight: 70, angle: 240, name: prize[4] },
+    { weight: 0, angle: 240, name: prize[4] },
     { weight: 0, angle: 300, name: prize[5] },
   ];
 
@@ -124,8 +124,26 @@ export default function LuckyWheel() {
         borderRadius: '16px',
         boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
         padding: '32px',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative'
       }}>
+        <button 
+          onClick={onBack} 
+          className="back-btn"
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            fontSize: '14px',
+            padding: '4px 8px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#1f2937'
+          }}
+        >
+          ← 返回
+        </button>
         <h1 style={{
           fontSize: '28px',
           fontWeight: 'bold',
