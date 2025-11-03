@@ -280,7 +280,6 @@ const DiceGame = () => {
   };
 
   // --- 主菜单界面 ---
-
   if (step === "menu") {
     return (
       <div className="app-container">
@@ -290,20 +289,22 @@ const DiceGame = () => {
           </div>
           <h1 className="main-title">🎲 零界突破俱乐部</h1>
           <h1 className="main-title">🎮 游戏中心</h1>
-
+  
           <div className="select-section">
             <h2 className="section-title">选择游戏模式</h2>
-            <select 
+  
+            {/* ✅ 1. 修改 onChange，只更新 selectedGame，不跳转 */}
+            <select
               value={selectedGame}
-              onChange={handleGameSelect}
+              onChange={(e) => setSelectedGame(e.target.value)}
               style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                borderRadius: '8px',
-                border: '1px solid #ddd',
-                marginBottom: '20px',
-                cursor: 'pointer'
+                width: "100%",
+                padding: "12px",
+                fontSize: "16px",
+                borderRadius: "8px",
+                border: "1px solid #ddd",
+                marginBottom: "20px",
+                cursor: "pointer",
               }}
             >
               <option value="dice">🎲 骰子游戏 (默认)</option>
@@ -312,8 +313,30 @@ const DiceGame = () => {
               <option value="minesweeper">💣 扫雷游戏</option>
               <option value="luckywheel">🎡 转盘抽奖</option>
             </select>
+  
+            {/* ✅ 2. 新增“确认选择”按钮 */}
+            <button
+              onClick={() => {
+                if (selectedGame === "bobing") {
+                  setDiceCount(6);
+                  setStep("game");
+                } else if (selectedGame === "niuniu") {
+                  setDiceCount(5);
+                  setStep("niuniu");
+                } else if (selectedGame === "dice") {
+                  setStep("select");
+                } else if (selectedGame === "minesweeper") {
+                  setStep("minesweeper-select");
+                } else if (selectedGame === "luckywheel") {
+                  setStep("luckywheel");
+                }
+              }}
+              className="start-btn"
+            >
+              确认选择 🎮
+            </button>
           </div>
-
+  
           <div className="club-trademark">
             <p className="trademark-text">
               © 2025 零界突破俱乐部 | Zero Limit Breakthrough Club
@@ -327,6 +350,7 @@ const DiceGame = () => {
       </div>
     );
   }
+  
 
   if (step === "minesweeper-select") {
     return (
