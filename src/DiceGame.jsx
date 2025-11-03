@@ -261,23 +261,6 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
-  const handleGameSelect = (e) => {
-    const value = e.target.value;
-    setSelectedGame(value);
-    if (value === "bobing") {
-      setDiceCount(6);
-      setStep("game");
-    } else if (value === "niuniu") {
-      setDiceCount(5);
-      setStep("niuniu");
-    } else if (value === "dice") {
-      setStep("select");
-    } else if (value === "minesweeper") {
-      setStep("minesweeper-select");
-    } else if (value === "luckywheel") {
-      setStep("luckywheel");
-    }
-  };
 
   // --- 主菜单界面 ---
   if (step === "menu") {
