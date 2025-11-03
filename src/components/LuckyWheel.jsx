@@ -5,6 +5,7 @@ export default function LuckyWheel() {
   const [result, setResult] = useState('');
   const [rotation, setRotation] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const prize = [
     '保底增加188w',
@@ -96,6 +97,15 @@ export default function LuckyWheel() {
     const seconds = Math.floor((remainingTime % 60000) / 1000);
     countdownDisplay = `您每24小时只能玩一次，剩余 ${hours}小时 ${minutes}分 ${seconds}秒`;
   }
+
+  const probabilities = [
+    { name: '保底增加188w', prob: 70 },
+    { name: '保底增加388w', prob: 24 },
+    { name: '288小金单', prob: 4 },
+    { name: '388爽吃大保险单', prob: 0.9 },
+    { name: '1111.11现金红包', prob: 0.05 },
+    { name: '非洲之心不出不结单', prob: 0.05 },
+  ];
 
   return (
     <div style={{ 
@@ -281,9 +291,25 @@ export default function LuckyWheel() {
         )}
 
         <button
-          onClick={resetLock}
+          onClick={() => setShowModal(true)}
           style={{
             marginTop: '20px',
+            padding: '8px 16px',
+            fontSize: '14px',
+            cursor: 'pointer',
+            background: '#4b5563',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+          }}
+        >
+          查看公示
+        </button>
+
+        <button
+          onClick={resetLock}
+          style={{
+            marginTop: '10px',
             padding: '8px 16px',
             fontSize: '14px',
             cursor: 'pointer',
@@ -296,6 +322,96 @@ export default function LuckyWheel() {
           测试重置时间限制
         </button>
       </div>
+
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 20,
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '24px',
+            borderRadius: '12px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          }}>
+            <h2 style={{
+              fontSize: '22px',
+              fontWeight: 'bold',
+              color: '#1f2937',
+              marginBottom: '16px',
+            }}>活动公示</h2>
+            <p style={{
+              fontSize: '14px',
+              color: '#4b5563',
+              marginBottom: '12px',
+            }}>
+              欢迎参与我们的转盘抽奖活动！活动期间，每位用户每天仅限参与一次，抽奖结果随机生成，确保公平公正。
+            </p>
+            <p style={{
+              fontSize: '14px',
+              color: '#4b5563',
+              marginBottom: '12px',
+            }}>
+              请注意，抽奖奖品包括各种虚拟奖励和惊喜红包。所有奖品均为虚拟物品，不涉及真实货币兑换。活动规则如下：用户需遵守平台使用协议，不得使用任何作弊手段参与活动。一经发现，将取消资格。
+            </p>
+            <p style={{
+              fontSize: '14px',
+              color: '#4b5563',
+              marginBottom: '12px',
+            }}>
+              此外，本活动可能会根据实际情况调整规则，敬请关注最新公告。感谢您的参与，如果有任何疑问，请联系客服支持。我们致力于提供最佳的用户体验，希望您玩得开心！
+            </p>
+            <p style={{
+              fontSize: '14px',
+              color: '#4b5563',
+              marginBottom: '12px',
+            }}>
+              最后，以下是各奖品的公示概率（单位：%）：
+            </p>
+            <ul style={{
+              listStyleType: 'disc',
+              paddingLeft: '20px',
+              marginBottom: '20px',
+            }}>
+              {probabilities.map((item, index) => (
+                <li key={index} style={{
+                  fontSize: '14px',
+                  color: '#1f2937',
+                  marginBottom: '8px',
+                }}>
+                  {item.name}: {item.prob}%
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+              }}
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes resultAppear {
