@@ -3,6 +3,7 @@ import "./DiceGame.css"; // 需要引入CSS文件
 import logo from "./pic/logo.png"; // 导入本地logo图片
 import NiuNiuGame from "./components/niuniugame";
 import MinesweeperGame from "./components/MineSweeperGame";
+import LuckyWheel from "./components/LuckyWheel";
 
 const DiceGame = () => {
   const [step, setStep] = useState("menu");
@@ -241,11 +242,11 @@ const DiceGame = () => {
       setStep("menu");
     } else if (step === "niuniu") {
       setStep("menu");
-
     } else if (step === "minesweeper") {
       setStep("minesweeper-select");
-    }
-     else {
+    } else if (step === "luckywheel") {
+      setStep("menu");
+    } else {
       setStep("select");
     }
     setDiceValues([]);
@@ -259,12 +260,6 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
-  // const clearHistory = () => {
-  //   if (window.confirm("确定要清空所有历史记录吗?")) {
-  //     setHistory([]);
-  //     localStorage.removeItem("diceHistory");
-  //   }
-  // };
   // --- 主菜单界面 ---
 
   if (step === "menu") {
@@ -314,6 +309,14 @@ const DiceGame = () => {
                 💣 扫雷游戏
                 <p className="mode-desc">多种模式 · 扫雷挑战</p>
               </button>
+
+              <button
+                className="mode-box"
+                onClick={() => setStep("luckywheel")}
+              >
+                🎡 转盘抽奖
+                <p className="mode-desc">好礼放送 · 幸运转盘</p>
+              </button>
             </div>
           </div>
 
@@ -330,6 +333,7 @@ const DiceGame = () => {
       </div>
     );
   }
+
   if (step === "minesweeper-select") {
     return (
       <div className="app-container">
@@ -380,6 +384,7 @@ const DiceGame = () => {
       </div>
     );
   }
+
   if (step === "select") {
     return (
       <div className="app-container">
@@ -431,12 +436,19 @@ const DiceGame = () => {
       </div>
     );
   }
+
   if (step === "niuniu") {
     return <NiuNiuGame onBack={goBack} />;
   }
+
   if (step === "minesweeper") {
     return <MinesweeperGame onBack={() => setStep("minesweeper-select")} gridSize={minesweeperSize} />;
   }
+
+  if (step === "luckywheel") {
+    return <LuckyWheel onBack={goBack} />;
+  }
+
   return (
     <div className="app-container">
       <div className="game-container">
@@ -549,13 +561,6 @@ const DiceGame = () => {
                 <div className="history-header">
                   <h3 className="history-title">📜 历史记录</h3>
                   <div className="history-actions">
-                    {/* <button
-                      className="history-clear-btn"
-                      onClick={clearHistory}
-                      title="清空历史"
-                    >
-                      🗑️
-                    </button> */}
                     <button
                       className="history-collapse-btn"
                       onClick={toggleHistoryWindow}
