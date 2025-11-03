@@ -14,6 +14,7 @@ const DiceGame = () => {
   const [history, setHistory] = useState([]);
   const [historyCollapsed, setHistoryCollapsed] = useState(true);
   const [minesweeperSize, setMinesweeperSize] = useState(7);
+  const [selectedGame, setSelectedGame] = useState("dice"); // 默认骰子游戏
   
   // localStorage 工具函数(替代 cookie)
   const saveToStorage = (key, value) => {
@@ -260,6 +261,24 @@ const DiceGame = () => {
 
   const toggleHistoryWindow = () => setHistoryCollapsed((s) => !s);
 
+  const handleGameSelect = (e) => {
+    const value = e.target.value;
+    setSelectedGame(value);
+    if (value === "bobing") {
+      setDiceCount(6);
+      setStep("game");
+    } else if (value === "niuniu") {
+      setDiceCount(5);
+      setStep("niuniu");
+    } else if (value === "dice") {
+      setStep("select");
+    } else if (value === "minesweeper") {
+      setStep("minesweeper-select");
+    } else if (value === "luckywheel") {
+      setStep("luckywheel");
+    }
+  };
+
   // --- 主菜单界面 ---
 
   if (step === "menu") {
@@ -274,50 +293,25 @@ const DiceGame = () => {
 
           <div className="select-section">
             <h2 className="section-title">选择游戏模式</h2>
-            <div className="game-mode-grid">
-              <button
-                className="mode-box"
-                onClick={() => {
-                  setDiceCount(6);
-                  setStep("game");
-                }}
-              >
-                🥮 博饼游戏
-                <p className="mode-desc">6个骰子 · 传统中秋玩法</p>
-              </button>
-
-              <button
-                className="mode-box"
-                onClick={() => {
-                  setDiceCount(5);
-                  setStep("niuniu");
-                }}
-              >
-                🃏 牛牛游戏
-                <p className="mode-desc">5张扑克 · 牛牛扑克模式</p>
-              </button>
-
-              <button className="mode-box" onClick={() => setStep("select")}>
-                🎲 骰子游戏
-                <p className="mode-desc">自由选择骰子数量</p>
-              </button>
-
-              <button
-                className="mode-box"
-                onClick={() => setStep("minesweeper-select")}
-              >
-                💣 扫雷游戏
-                <p className="mode-desc">多种模式 · 扫雷挑战</p>
-              </button>
-
-              <button
-                className="mode-box"
-                onClick={() => setStep("luckywheel")}
-              >
-                🎡 转盘抽奖
-                <p className="mode-desc">好礼放送 · 幸运转盘</p>
-              </button>
-            </div>
+            <select 
+              value={selectedGame}
+              onChange={handleGameSelect}
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '16px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                marginBottom: '20px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="dice">🎲 骰子游戏 (默认)</option>
+              <option value="bobing">🥮 博饼游戏</option>
+              <option value="niuniu">🃏 牛牛游戏</option>
+              <option value="minesweeper">💣 扫雷游戏</option>
+              <option value="luckywheel">🎡 转盘抽奖</option>
+            </select>
           </div>
 
           <div className="club-trademark">

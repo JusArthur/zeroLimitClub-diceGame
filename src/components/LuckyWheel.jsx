@@ -81,11 +81,6 @@ export default function LuckyWheel({ onBack }) {
     run(index);
   };
 
-  const resetLock = () => {
-    localStorage.removeItem('lastSpinTime');
-    window.location.reload();
-  };
-
   const colors = ['#77ddff', '#00ddaa', '#ffff33', '#d28eff', '#ffdd55', '#ff88c2'];
 
   const isLocked = remainingTime !== null;
@@ -319,25 +314,12 @@ export default function LuckyWheel({ onBack }) {
             color: 'white',
             border: 'none',
             borderRadius: '8px',
+            display: 'block',
+            marginLeft: 'auto',
+            marginRight: 'auto'
           }}
         >
           查看公示
-        </button>
-
-        <button
-          onClick={resetLock}
-          style={{
-            marginTop: '10px',
-            padding: '8px 16px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            background: 'gray',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-          }}
-        >
-          测试重置时间限制
         </button>
       </div>
 
