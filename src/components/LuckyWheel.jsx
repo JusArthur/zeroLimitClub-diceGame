@@ -94,8 +94,8 @@ export default function LuckyWheel({ onBack }) {
   }
 
   const probabilities = [
-    { name: '保底增加188w', prob: 70 },
-    { name: '保底增加388w', prob: 24 },
+    { name: '保底增加488w', prob: 70 },
+    { name: '保底增加788w', prob: 24 },
     { name: '288小金单', prob: 4 },
     { name: '388爽吃大保险单', prob: 0.9 },
     { name: '1111.11现金红包', prob: 0.05 },
