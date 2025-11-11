@@ -1,12 +1,140 @@
 import React, { useState, useEffect } from 'react';
 
-export default function LuckyWheel({ onBack }) {
+// 安全保护Hook
+const useSecurityProtection = () => {
+  useEffect(() => {
+    // 1. 禁用右键菜单
+    const disableContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    // 2. 禁用开发者工具快捷键
+    const disableDevTools = (e) => {
+      // F12
+      if (e.keyCode === 123) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+I / Cmd+Option+I
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 73) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+C / Cmd+Option+C
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 67) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+J / Cmd+Option+J
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 74) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+U / Cmd+U (查看源代码)
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 85) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    // 3. 检测开发者工具
+    const detectDevTools = () => {
+      const threshold = 160;
+      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+      
+      if (widthThreshold || heightThreshold) {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:24px;color:#dc2626;">⚠️ 检测到非法操作，页面已锁定</div>';
+      }
+    };
+
+    // 4. 禁用选择和复制
+    const disableSelection = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    document.addEventListener('contextmenu', disableContextMenu);
+    document.addEventListener('keydown', disableDevTools);
+    document.addEventListener('selectstart', disableSelection);
+    document.addEventListener('copy', disableSelection);
+
+    // 定期检测开发者工具（每秒检测一次）
+    const devToolsInterval = setInterval(detectDevTools, 1000);
+
+    // 5. 混淆console.log输出
+    const originalLog = console.log;
+    console.log = function(...args) {
+      // 在生产环境中完全禁用或输出混淆信息
+      originalLog.apply(console, ['[已屏蔽]']);
+    };
+
+    return () => {
+      document.removeEventListener('contextmenu', disableContextMenu);
+      document.removeEventListener('keydown', disableDevTools);
+      document.removeEventListener('selectstart', disableSelection);
+      document.removeEventListener('copy', disableSelection);
+      clearInterval(devToolsInterval);
+      console.log = originalLog;
+    };
+  }, []);
+};
+
+// 数据加密工具
+const encryptData = (data) => {
+  // 简单的Base64编码 + 字符串反转
+  const jsonStr = JSON.stringify(data);
+  const base64 = btoa(encodeURIComponent(jsonStr));
+  return base64.split('').reverse().join('');
+};
+
+const decryptData = (encrypted) => {
+  try {
+    const base64 = encrypted.split('').reverse().join('');
+    const jsonStr = decodeURIComponent(atob(base64));
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return null;
+  }
+};
+
+// 受保护的localStorage包装器
+const secureStorage = {
+  setItem: (key, value) => {
+    const encrypted = encryptData(value);
+    const timestamp = Date.now();
+    const hash = btoa(`${key}_${timestamp}_${Math.random()}`);
+    localStorage.setItem(`sec_${key}`, encrypted);
+    localStorage.setItem(`sec_${key}_hash`, hash);
+  },
+  
+  getItem: (key) => {
+    const encrypted = localStorage.getItem(`sec_${key}`);
+    const hash = localStorage.getItem(`sec_${key}_hash`);
+    
+    if (!encrypted || !hash) return null;
+    
+    return decryptData(encrypted);
+  },
+  
+  removeItem: (key) => {
+    localStorage.removeItem(`sec_${key}`);
+    localStorage.removeItem(`sec_${key}_hash`);
+  }
+};
+
+// 受保护的转盘组件
+const ProtectedLuckyWheel = ({ onBack }) => {
+  useSecurityProtection();
+  
   const [isFlag, setIsFlag] = useState(true);
   const [result, setResult] = useState('');
   const [rotation, setRotation] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // 使用加密存储
   const prize = [
     '保底增加188w',
     '保底增加388w',
@@ -16,7 +144,6 @@ export default function LuckyWheel({ onBack }) {
     '非洲之心不出不结单',
   ];
 
-  // 权重和对应的角度（指针指向顶部时为0°）
   const prizeConfig = [
     { weight: 70, angle: 0, name: prize[0] },
     { weight: 24, angle: 60, name: prize[1] },
@@ -39,13 +166,21 @@ export default function LuckyWheel({ onBack }) {
   };
 
   const run = (targetIndex) => {
+    // === 关键修复：拦截权重为0的奖品 ===
+    if (prizeConfig[targetIndex].weight === 0) {
+      console.error('非法中奖尝试：', prizeConfig[targetIndex].name);
+      alert('系统检测到异常操作，抽奖已取消！');
+      setIsFlag(true);
+      return;
+    }
+  
     setIsFlag(false);
     const middleAngle = prizeConfig[targetIndex].angle + 30;
     let alpha = (270 - middleAngle + 360) % 360;
     const rounds = 5 + Math.floor(Math.random() * 4);
     const totalAngle = rounds * 360 + alpha;
     setRotation(totalAngle);
-
+  
     setTimeout(() => {
       setResult(prizeConfig[targetIndex].name);
       setIsFlag(true);
@@ -53,7 +188,7 @@ export default function LuckyWheel({ onBack }) {
   };
 
   const updateRemaining = () => {
-    const lastSpin = localStorage.getItem('lastSpinTime');
+    const lastSpin = secureStorage.getItem('lastSpinTime');
     if (lastSpin) {
       const diff = Date.now() - parseInt(lastSpin);
       const lockDuration = 24 * 60 * 60 * 1000;
@@ -76,13 +211,12 @@ export default function LuckyWheel({ onBack }) {
   const handleClick = () => {
     if (!isFlag || remainingTime !== null) return;
     const index = weightedRandom();
-    localStorage.setItem('lastSpinTime', Date.now().toString());
+    secureStorage.setItem('lastSpinTime', Date.now().toString());
     updateRemaining();
     run(index);
   };
 
   const colors = ['#77ddff', '#00ddaa', '#ffff33', '#d28eff', '#ffdd55', '#ff88c2'];
-
   const isLocked = remainingTime !== null;
 
   let countdownDisplay = null;
@@ -112,7 +246,8 @@ export default function LuckyWheel({ onBack }) {
       alignItems: 'center', 
       margin: 0, 
       padding: 0,
-      background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #14b8a6 100%)'
+      background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #14b8a6 100%)',
+      userSelect: 'none'
     }}>
       <div style={{ 
         background: 'white',
@@ -124,7 +259,6 @@ export default function LuckyWheel({ onBack }) {
       }}>
         <button 
           onClick={onBack} 
-          className="back-btn"
           style={{
             position: 'absolute',
             top: '10px',
@@ -139,6 +273,7 @@ export default function LuckyWheel({ onBack }) {
         >
           ← 返回
         </button>
+        
         <h1 style={{
           fontSize: '28px',
           fontWeight: 'bold',
@@ -148,7 +283,6 @@ export default function LuckyWheel({ onBack }) {
         }}>转盘好礼放送！</h1>
 
         <div style={{ position: 'relative', width: '300px', height: '300px', margin: '0 auto' }}>
-          {/* 转盘 */}
           <svg
             style={{
               width: '300px',
@@ -173,7 +307,6 @@ export default function LuckyWheel({ onBack }) {
               const largeArc = 0;
               const pathData = `M 150 150 L ${x1} ${y1} A 150 150 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
-              // 文字位置 - 竖直居中效果
               const textAngle = (config.angle + 30) * Math.PI / 180;
               const textX = 150 + 100 * Math.cos(textAngle);
               const textY = 150 + 100 * Math.sin(textAngle);
@@ -205,7 +338,6 @@ export default function LuckyWheel({ onBack }) {
             })}
           </svg>
 
-          {/* 指针 */}
           <div
             style={{
               position: 'absolute',
@@ -222,7 +354,6 @@ export default function LuckyWheel({ onBack }) {
             }}
           />
 
-          {/* 中心按钮 */}
           <div
             onClick={handleClick}
             style={{
@@ -269,14 +400,12 @@ export default function LuckyWheel({ onBack }) {
             border: '3px solid #fbbf24',
             borderRadius: '16px',
             boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
-            animation: 'resultAppear 0.6s ease-out'
           }}>
             <div style={{
               fontSize: '24px',
               fontWeight: 'bold',
               color: '#1f2937',
               marginBottom: '8px',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
             }}>
               🎉 恭喜中奖 🎉
             </div>
@@ -287,18 +416,6 @@ export default function LuckyWheel({ onBack }) {
               margin: '12px 0'
             }}>
               {result}
-            </div>
-            <div style={{
-              fontSize: '16px',
-              color: '#dc2626',
-              fontWeight: 'bold',
-              padding: '8px',
-              background: 'linear-gradient(45deg, #fef2f2, #fee2e2)',
-              borderRadius: '8px',
-              marginTop: '12px',
-              animation: 'celebrate 2s infinite'
-            }}>
-              ✨ 恭喜你抽中了 {result}！✨
             </div>
           </div>
         )}
@@ -352,33 +469,8 @@ export default function LuckyWheel({ onBack }) {
               color: '#1f2937',
               marginBottom: '16px',
             }}>活动公示</h2>
-            <p style={{
-              fontSize: '14px',
-              color: '#4b5563',
-              marginBottom: '12px',
-            }}>
-              欢迎参与我们的转盘抽奖活动！活动期间，每位用户每天仅限参与一次，抽奖结果随机生成，确保公平公正。
-            </p>
-            <p style={{
-              fontSize: '14px',
-              color: '#4b5563',
-              marginBottom: '12px',
-            }}>
-              请注意，抽奖奖品包括各种虚拟奖励和惊喜红包。所有奖品均为虚拟物品，不涉及真实货币兑换。活动规则如下：用户需遵守平台使用协议，不得使用任何作弊手段参与活动。一经发现，将取消资格。
-            </p>
-            <p style={{
-              fontSize: '14px',
-              color: '#4b5563',
-              marginBottom: '12px',
-            }}>
-              此外，本活动可能会根据实际情况调整规则，敬请关注最新公告。感谢您的参与，如果有任何疑问，请联系客服支持。我们致力于提供最佳的用户体验，希望您玩得开心！
-            </p>
-            <p style={{
-              fontSize: '14px',
-              color: '#4b5563',
-              marginBottom: '12px',
-            }}>
-              最后，以下是各奖品的公示概率（单位：%）：
+            <p style={{ fontSize: '14px', color: '#4b5563', marginBottom: '12px' }}>
+              欢迎参与我们的转盘抽奖活动！以下是各奖品的公示概率：
             </p>
             <ul style={{
               listStyleType: 'disc',
@@ -412,28 +504,8 @@ export default function LuckyWheel({ onBack }) {
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes resultAppear {
-          0% {
-            opacity: 0;
-            transform: translateY(20px) scale(0.9);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        
-        @keyframes celebrate {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-        }
-      `}</style>
     </div>
   );
-}
+};
+
+export default ProtectedLuckyWheel;
