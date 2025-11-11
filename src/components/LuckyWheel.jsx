@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useCallback } from 'react';
 
 // 安全保护Hook
 const useSecurityProtection = () => {
@@ -134,6 +133,7 @@ const ProtectedLuckyWheel = ({ onBack }) => {
   const [rotation, setRotation] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [gameHistory, setGameHistory] = useState([]);
 
   // 使用加密存储
   const prize = [
@@ -166,6 +166,53 @@ const ProtectedLuckyWheel = ({ onBack }) => {
     return prizeConfig.length - 1;
   };
 
+  const STORAGE_KEY_HISTORY = 'luckywheel_history';
+
+  const loadGameHistory = useCallback(() => {
+    const encrypted = localStorage.getItem(STORAGE_KEY_HISTORY);
+    if (!encrypted) {
+      setGameHistory([]);
+      return;
+    }
+
+    const decrypted = decryptData(encrypted);
+    if (Array.isArray(decrypted)) {
+      setGameHistory(decrypted.slice(0, 10)); // 最多10条
+    } else {
+      setGameHistory([]);
+    }
+  }, []);
+
+  const saveDrawRecord = useCallback((prizeName) => {
+    const now = new Date();
+    const newRecord = {
+      name: prizeName,
+      date: now.toLocaleDateString('zh-CN'),
+      time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now.getTime(),
+    };
+
+    // 加载现有记录
+    const encrypted = localStorage.getItem(STORAGE_KEY_HISTORY);
+    let history = [];
+    if (encrypted) {
+      const decrypted = decryptData(encrypted);
+      if (Array.isArray(decrypted)) history = decrypted;
+    }
+
+    // 添加新记录到最前面
+    history.unshift(newRecord);
+
+    // 限制最多10条
+    const limited = history.slice(0, 10);
+
+    // 加密保存
+    const encryptedNew = encryptData(limited);
+    localStorage.setItem(STORAGE_KEY_HISTORY, encryptedNew);
+
+    setGameHistory(limited);
+  }, []);
+
   const run = (targetIndex) => {
     // === 关键修复：拦截权重为0的奖品 ===
     if (prizeConfig[targetIndex].weight === 0) {
@@ -185,6 +232,9 @@ const ProtectedLuckyWheel = ({ onBack }) => {
     setTimeout(() => {
       setResult(prizeConfig[targetIndex].name);
       setIsFlag(true);
+      
+      // 保存开奖记录
+      saveDrawRecord(prizeConfig[targetIndex].name);
     }, 4000);
   };
 
@@ -206,8 +256,9 @@ const ProtectedLuckyWheel = ({ onBack }) => {
   useEffect(() => {
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
+    loadGameHistory();
     return () => clearInterval(interval);
-  }, []);
+  }, [loadGameHistory]);
 
   const handleClick = () => {
     if (!isFlag || remainingTime !== null) return;
@@ -439,6 +490,67 @@ const ProtectedLuckyWheel = ({ onBack }) => {
         >
           查看公示
         </button>
+
+        {/* 开奖记录 */}
+        <div style={{
+          marginTop: '32px',
+          padding: '20px',
+          background: '#f9fafb',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            margin: '0 0 16px 0',
+            textAlign: 'center'
+          }}>开奖记录</h3>
+
+          {gameHistory.length === 0 ? (
+            <p style={{
+              textAlign: 'center',
+              color: '#9ca3af',
+              fontSize: '14px',
+              margin: 0
+            }}>暂无记录</p>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}>
+              {gameHistory.map((record, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 12px',
+                  background: 'white',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}>
+                  <span style={{ color: '#6b7280', fontWeight: '500' }}>
+                    {record.date} {record.time}
+                  </span>
+                  <span style={{
+                    color: '#2563eb',
+                    fontWeight: '600',
+                    maxWidth: '180px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {record.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && (
