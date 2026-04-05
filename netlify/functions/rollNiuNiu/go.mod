@@ -2,4 +2,4 @@ module rollniuniu
 
 go 1.23.2
 
-require github.com/aws/aws-lambda-go v1.54.0 // indirect
+require github.com/aws/aws-lambda-go v1.54.0
