@@ -1,5 +1,5 @@
 import React from 'react';
-import DiceGame from './DiceGame';
+import DiceGame from './views/DiceGame/DiceGame';
 import './App.css';
 
 function App() {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./DiceGame.css";
-import logo from "./pic/logo.png";
-import NiuNiuGame from "./niuniugame";
-import MinesweeperGame from "./MineSweeperGame";
-import LuckyWheel from "./LuckyWheel";
+import logo from "../../assests/icons/logo.svg";
+import NiuNiuGame from "../niuniugame";
+import MinesweeperGame from "../MineSweeperGame";
+import LuckyWheel from "../LuckyWheel";
 
 const DiceGame = () => {
   const [step, setStep] = useState("menu");
