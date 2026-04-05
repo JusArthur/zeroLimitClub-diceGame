@@ -6,19 +6,24 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   const MINE_COUNT = 1;
   const SAFE_CELLS = TOTAL_CELLS - MINE_COUNT;
 
-  const [grid, setGrid] = useState([]);
-  const [revealed, setRevealed] = useState([]);
+  // The grid now only tracks whether a cell is revealed or if it contains a confirmed mine (at game over)
+  const [revealed, setRevealed] = useState(Array(TOTAL_CELLS).fill(false));
+  const [minePositions, setMinePositions] = useState(Array(TOTAL_CELLS).fill(false));
+  
   const [gameStatus, setGameStatus] = useState("playing");
   const [revealedCount, setRevealedCount] = useState(0);
   const [gameHistory, setGameHistory] = useState([]);
   const [showRestartWarning, setShowRestartWarning] = useState(false);
   const [currentGameId, setCurrentGameId] = useState(null);
+  
+  // Security + Network state
+  const [gameStateToken, setGameStateToken] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // 存储键名根据网格大小区分
   const STORAGE_KEY_HISTORY = `minesweeper_history_${GRID_SIZE}x${GRID_SIZE}`;
   const STORAGE_KEY_STATE = `minesweeper_state_${GRID_SIZE}x${GRID_SIZE}`;
+  const API_ENDPOINT = "/.netlify/functions/minesweeper"; // Update this if your function path is different
 
-  // 加载游戏历史
   const loadGameHistory = useCallback(() => {
     const history = localStorage.getItem(STORAGE_KEY_HISTORY);
     let parsed = [];
@@ -32,7 +37,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
     setGameHistory(parsed);
   }, [STORAGE_KEY_HISTORY]);
 
-  // 保存游戏记录
   const saveGameRecord = useCallback((status, score, isManualRestart = false) => {
     const now = new Date();
     const newResult = status === 'won' ? '获胜' :
@@ -47,7 +51,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
                      history[0].result === '进行中';
 
     if (isUpdate) {
-      // 更新现有记录
       history[0].result = newResult;
       history[0].score = newScore;
       history[0].time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
@@ -55,7 +58,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
         history[0].isManualRestart = isManualRestart;
       }
     } else {
-      // 创建新记录
       const record = {
         date: now.toLocaleDateString('zh-CN'),
         time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
@@ -68,20 +70,57 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       history.unshift(record);
     }
 
-    // 只保留最近10条记录
     const limitedHistory = history.slice(0, 10);
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(limitedHistory));
     setGameHistory(limitedHistory);
   }, [SAFE_CELLS, STORAGE_KEY_HISTORY, currentGameId]);
 
-  // 加载游戏状态
+  // Request new game from Server
+  const initGame = useCallback(async () => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "INIT", gridSize: GRID_SIZE })
+      });
+      const data = await response.json();
+      
+      if (data.status === "playing") {
+        setGameStateToken(data.gameStateToken);
+        setRevealed(Array(TOTAL_CELLS).fill(false));
+        setMinePositions(Array(TOTAL_CELLS).fill(false));
+        setGameStatus("playing");
+        setRevealedCount(0);
+        setShowRestartWarning(false);
+        
+        const newGameId = Math.random().toString(36).substring(2);
+        setCurrentGameId(newGameId);
+        
+        // Save encrypted state to local storage
+        localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
+          gameStateToken: data.gameStateToken,
+          revealed: Array(TOTAL_CELLS).fill(false),
+          gameStatus: "playing",
+          revealedCount: 0,
+          currentGameId: newGameId
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to initialize game:", error);
+      alert("网络错误, 无法初始化游戏");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [GRID_SIZE, TOTAL_CELLS, STORAGE_KEY_STATE]);
+
   const loadGameState = useCallback(() => {
     const savedState = localStorage.getItem(STORAGE_KEY_STATE);
     if (savedState) {
       try {
         const state = JSON.parse(savedState);
-        if (state.gameStatus === 'playing') {
-          setGrid(state.grid);
+        if (state.gameStatus === 'playing' && state.gameStateToken) {
+          setGameStateToken(state.gameStateToken);
           setRevealed(state.revealed);
           setGameStatus(state.gameStatus);
           setRevealedCount(state.revealedCount);
@@ -93,21 +132,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
     return false;
   }, [STORAGE_KEY_STATE]);
 
-  // 初始化游戏
-  const initGame = useCallback(() => {
-    const minePos = Math.floor(Math.random() * TOTAL_CELLS);
-
-    const newGrid = Array(TOTAL_CELLS).fill(false);
-    newGrid[minePos] = true;
-    setGrid(newGrid);
-
-    setRevealed(Array(TOTAL_CELLS).fill(false));
-    setGameStatus("playing");
-    setRevealedCount(0);
-    setShowRestartWarning(false);
-    setCurrentGameId(Math.random().toString(36).substring(2));
-  }, [TOTAL_CELLS]);
-
   useEffect(() => {
     loadGameHistory();
     if (!loadGameState()) {
@@ -115,78 +139,97 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
     }
   }, [initGame, loadGameHistory, loadGameState]);
 
-  // 处理点击格子
-  const handleCellClick = (index) => {
-    if (gameStatus !== "playing" || revealed[index]) return;
+  // Handle cell click with server validation
+  const handleCellClick = async (index) => {
+    if (gameStatus !== "playing" || revealed[index] || isProcessing || !gameStateToken) return;
 
-    const newRevealed = [...revealed];
-    newRevealed[index] = true;
-    setRevealed(newRevealed);
+    setIsProcessing(true);
 
-    if (grid[index]) {
-      // 踩到地雷
-      setGameStatus("lost");
-      setRevealed(Array(TOTAL_CELLS).fill(true));
-      saveGameRecord('lost', revealedCount);
-      localStorage.removeItem(STORAGE_KEY_STATE);
-    } else {
-      // 安全格子
-      const newCount = revealedCount + 1;
-      setRevealedCount(newCount);
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "CLICK", gameStateToken, cellIndex: index })
+      });
+      const data = await response.json();
 
-      if (newCount === SAFE_CELLS) {
+      if (data.error) throw new Error(data.message);
+
+      const newRevealed = [...revealed];
+      newRevealed[index] = true;
+      setRevealed(newRevealed);
+
+      if (data.status === "lost") {
+        setGameStatus("lost");
+        // Reveal all cells
+        setRevealed(Array(TOTAL_CELLS).fill(true));
+        // Server finally tells us where the mine is
+        const newMines = Array(TOTAL_CELLS).fill(false);
+        newMines[data.minePos] = true;
+        setMinePositions(newMines);
+        
+        saveGameRecord('lost', data.revealedCount);
+        localStorage.removeItem(STORAGE_KEY_STATE);
+      } 
+      else if (data.status === "won") {
         setGameStatus("won");
         setRevealed(Array(TOTAL_CELLS).fill(true));
-        saveGameRecord('won', newCount);
+        
+        const newMines = Array(TOTAL_CELLS).fill(false);
+        newMines[data.minePos] = true;
+        setMinePositions(newMines);
+
+        saveGameRecord('won', data.revealedCount);
         localStorage.removeItem(STORAGE_KEY_STATE);
-      } else {
-        // 实时更新记录
-        saveGameRecord('playing', newCount);
-        // 保存当前游戏状态
+      } 
+      else {
+        // Still playing
+        setRevealedCount(data.revealedCount);
+        setGameStateToken(data.gameStateToken);
+        saveGameRecord('playing', data.revealedCount);
+        
         localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
-          grid,
+          gameStateToken: data.gameStateToken, // Store the NEW token
           revealed: newRevealed,
           gameStatus: "playing",
-          revealedCount: newCount,
+          revealedCount: data.revealedCount,
           currentGameId
         }));
       }
+    } catch (error) {
+      console.error("Move failed:", error);
+      alert("网络错误或游戏状态失效, 请重新开始");
+      localStorage.removeItem(STORAGE_KEY_STATE);
+      initGame();
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // 处理重新开始按钮点击
   const handleRestartClick = () => {
-    // 如果游戏已经结束或者还没开始玩，直接重新开始
     if (gameStatus !== "playing" || revealedCount === 0) {
       initGame();
     } else {
-      // 游戏进行中，显示警告
       setShowRestartWarning(true);
     }
   };
 
-  // 确认重新开始
   const confirmRestart = () => {
-    // 保存当前未完成的游戏记录
     saveGameRecord('incomplete', revealedCount, true);
     localStorage.removeItem(STORAGE_KEY_STATE);
-    // 重新开始游戏
     initGame();
   };
 
-  // 取消重新开始
   const cancelRestart = () => {
     setShowRestartWarning(false);
   };
 
-  // 格子内容
   const getCellContent = (index) => {
     if (!revealed[index]) return "";
-    if (grid[index]) return "💣";
+    if (minePositions[index]) return "💣";
     return "✓";
   };
 
-  // 格子样式
   const getCellStyle = (index) => {
     const baseStyle = {
       position: "absolute",
@@ -197,17 +240,18 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
       border: "2px solid #d1d5db",
       borderRadius: "8px",
       background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
-      cursor: gameStatus === "playing" ? "pointer" : "not-allowed",
+      cursor: (gameStatus === "playing" && !isProcessing) ? "pointer" : "not-allowed",
       fontSize: GRID_SIZE === 5 ? "24px" : "20px",
       fontWeight: "bold",
       transition: "all 0.2s ease",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      opacity: isProcessing && !revealed[index] ? 0.7 : 1,
     };
 
     if (revealed[index]) {
-      if (grid[index]) {
+      if (minePositions[index]) {
         return {
           ...baseStyle,
           border: "2px solid #ef4444",
@@ -231,17 +275,11 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
   return (
     <div style={styles.container}>
       <div style={styles.gameBox}>
-        {/* 返回按钮 */}
-        <button onClick={onBack} style={styles.backBtn}>
-          ← 返回
-        </button>
-
-        {/* 重新开始按钮（替换原测试重置位置） */}
-        <button onClick={handleRestartClick} style={styles.testBtn}>
+        <button onClick={onBack} style={styles.backBtn}>← 返回</button>
+        <button onClick={handleRestartClick} style={styles.testBtn} disabled={isProcessing}>
           🔄 重新开始
         </button>
 
-        {/* Logo */}
         <div style={styles.logoContainer}>
           <div style={styles.logoCircle}>
             <span style={styles.logoText}>零界突破</span>
@@ -250,7 +288,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
 
         <h1 style={styles.title}>💣 扫雷游戏 ({GRID_SIZE}×{GRID_SIZE})</h1>
 
-        {/* 游戏信息 */}
         <div style={styles.infoBox}>
           <p style={styles.infoText}>
             安全格子:{" "}
@@ -264,7 +301,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           )}
         </div>
 
-        {/* 游戏结果 */}
         {gameStatus !== "playing" && (
           <div
             style={{
@@ -291,7 +327,6 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           </div>
         )}
 
-        {/* 重新开始警告弹窗 */}
         {showRestartWarning && (
           <div style={styles.warningOverlay}>
             <div style={styles.warningBox}>
@@ -299,36 +334,27 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
               <p style={styles.warningText}>
                 老板请注意：单子结束前请勿点击重新开始，若不小心在结单前/踩雷前重新开始此游戏，则打完保底结单。
               </p>
-              <p style={styles.warningSubtext}>
-                同意则视为接受此条款
-              </p>
-              <p style={styles.warningCurrentScore}>
-                当前进度: {revealedCount}/{SAFE_CELLS}
-              </p>
+              <p style={styles.warningSubtext}>同意则视为接受此条款</p>
+              <p style={styles.warningCurrentScore}>当前进度: {revealedCount}/{SAFE_CELLS}</p>
               <div style={styles.warningButtons}>
-                <button onClick={confirmRestart} style={styles.confirmBtn}>
-                  确认重新开始
-                </button>
-                <button onClick={cancelRestart} style={styles.cancelBtn}>
-                  取消
-                </button>
+                <button onClick={confirmRestart} style={styles.confirmBtn}>确认重新开始</button>
+                <button onClick={cancelRestart} style={styles.cancelBtn}>取消</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 游戏网格 */}
         <div style={{
           ...styles.gridContainer,
           gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
           maxWidth: GRID_SIZE === 5 ? "350px" : "420px",
         }}>
-          {grid.map((_, index) => (
+          {Array(TOTAL_CELLS).fill(0).map((_, index) => (
             <div key={index} style={styles.cellWrapper}>
               <button
                 onClick={() => handleCellClick(index)}
                 style={getCellStyle(index)}
-                disabled={gameStatus !== "playing" || revealed[index]}
+                disabled={gameStatus !== "playing" || revealed[index] || isProcessing}
               >
                 {getCellContent(index)}
               </button>
@@ -336,24 +362,20 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           ))}
         </div>
 
-        {/* 游戏历史记录 */}
         {gameHistory.length > 0 && (
           <div style={styles.historyContainer}>
             <h3 style={styles.historyTitle}>📊 游戏记录</h3>
             <div style={styles.historyList}>
               {gameHistory.map((record, index) => (
                 <div key={index} style={styles.historyItem}>
-                  <span style={styles.historyDate}>
-                    {record.date} {record.time}
-                  </span>
+                  <span style={styles.historyDate}>{record.date} {record.time}</span>
                   <span style={{
                     ...styles.historyResult,
                     color: record.result === '获胜' ? '#059669' : 
                           (record.result === '失败' ? '#dc2626' : 
                           (record.result === '进行中' ? '#2563eb' : '#f59e0b'))
                   }}>
-                    {record.result}
-                    {record.isManualRestart && ' (中途重开)'}
+                    {record.result}{record.isManualRestart && ' (中途重开)'}
                   </span>
                   <span style={styles.historyScore}>{record.score}</span>
                 </div>
@@ -362,20 +384,16 @@ const MinesweeperGame = ({ onBack, gridSize = 7 }) => {
           </div>
         )}
 
-        {/* 底部信息 */}
         <div style={styles.footer}>
-          <p style={styles.footerText}>
-            Zero Limit Breakthrough Club - 扫雷挑战
-          </p>
-          <p style={styles.hintText}>
-            💣 {GRID_SIZE}×{GRID_SIZE}网格 · 1个地雷 · {SAFE_CELLS}个安全格
-          </p>
+          <p style={styles.footerText}>Zero Limit Breakthrough Club - 扫雷挑战</p>
+          <p style={styles.hintText}>💣 {GRID_SIZE}×{GRID_SIZE}网格 · 1个地雷 · {SAFE_CELLS}个安全格</p>
         </div>
       </div>
     </div>
   );
 };
 
+// ... keep all the exact same CSS styles from your original code at the bottom here
 const styles = {
   container: {
     minHeight: "100vh",
@@ -603,19 +621,6 @@ const styles = {
     width: "100%",
     paddingBottom: "100%",
     position: "relative",
-  },
-  restartBtn: {
-    width: "100%",
-    background: "linear-gradient(45deg, #10b981, #3b82f6)",
-    color: "white",
-    fontWeight: "bold",
-    padding: "16px 24px",
-    borderRadius: "12px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "18px",
-    transition: "all 0.2s ease",
-    boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
   },
   historyContainer: {
     marginTop: "32px",
