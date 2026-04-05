@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
-import HistoryRecord from "./HistoryRecord";
+import HistoryRecord from "../../components/HistoryRecord";
 
 // 牛牛游戏组件
 const NiuNiuGame = ({ onBack }) => {
