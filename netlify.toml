@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build:obf" # Your existing build command
+  publish = "build"
+  functions = "netlify/functions"
+
+[functions]
+  directory = "netlify/functions"
