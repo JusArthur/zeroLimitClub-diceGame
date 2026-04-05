@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./DiceGame.css";
-import logo from "../../assests/icons/logo.svg";
+import logo from "../../assests/icons/logo.png";
 import NiuNiuGame from "../niuniugame";
 import MinesweeperGame from "../MineSweeperGame";
 import LuckyWheel from "../LuckyWheel";
