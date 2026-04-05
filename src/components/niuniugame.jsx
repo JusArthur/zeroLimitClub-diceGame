@@ -121,107 +121,121 @@ const NiuNiuGame = ({ onBack }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
+      <div style={styles.innerCard}>
         <button onClick={onBack} style={styles.backBtn}>
           ← 返回
         </button>
 
         <h1 style={styles.title}>🃏 牛牛游戏</h1>
-        <div style={styles.spacer}></div>
-      </div>
 
-      <div style={styles.gameArea}>
-        <div style={styles.cardsContainer}>
-          {cards.map((card, index) => (
-            <div
-              key={index}
+        <div style={styles.gameArea}>
+          <div style={styles.cardsContainer}>
+            {cards.map((card, index) => (
+              <div
+                key={index}
+                style={{
+                  ...styles.card,
+                  ...(isRolling && !revealedCards[index]
+                    ? styles.cardRolling
+                    : {}),
+                  animationDelay: `${index * 100}ms`,
+                }}
+              >
+                <div style={{ ...styles.cardSuit, color: suitColors[card.suit] }}>
+                  {!isRolling || revealedCards[index] ? card.suit : "?"}
+                </div>
+                <div style={{ ...styles.cardRank, color: suitColors[card.suit] }}>
+                  {!isRolling || revealedCards[index] ? card.rank : "?"}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {!isRolling && gameResult && (
+            <div style={{ ...styles.resultBox, borderColor: gameResult.color }}>
+              <h2 style={{ ...styles.resultName, color: gameResult.color }}>
+                {gameResult.name}
+              </h2>
+              <div style={styles.resultDetails}>
+                <span style={styles.multiplier}>{gameResult.multiplier}</span>
+              </div>
+              <p style={styles.description}>{gameResult.description}</p>
+            </div>
+          )}
+
+          <div style={styles.buttonContainer}>
+            <button
+              onClick={rollCards}
+              disabled={isRolling}
               style={{
-                ...styles.card,
-                ...(isRolling && !revealedCards[index]
-                  ? styles.cardRolling
-                  : {}),
-                animationDelay: `${index * 100}ms`,
+                ...styles.rollBtn,
+                ...(isRolling ? styles.rollBtnDisabled : {}),
               }}
             >
-              <div style={{ ...styles.cardSuit, color: suitColors[card.suit] }}>
-                {!isRolling || revealedCards[index] ? card.suit : "?"}
-              </div>
-              <div style={{ ...styles.cardRank, color: suitColors[card.suit] }}>
-                {!isRolling || revealedCards[index] ? card.rank : "?"}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {!isRolling && gameResult && (
-          <div style={{ ...styles.resultBox, borderColor: gameResult.color }}>
-            <h2 style={{ ...styles.resultName, color: gameResult.color }}>
-              {gameResult.name}
-            </h2>
-            <div style={styles.resultDetails}>
-              <span style={styles.multiplier}>{gameResult.multiplier}</span>
-            </div>
-            <p style={styles.description}>{gameResult.description}</p>
+              {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
+            </button>
           </div>
-        )}
 
-        <div style={styles.buttonContainer}>
-          <button
-            onClick={rollCards}
-            disabled={isRolling}
-            style={{
-              ...styles.rollBtn,
-              ...(isRolling ? styles.rollBtnDisabled : {}),
-            }}
-          >
-            {isRolling ? "发牌中... 🎴" : "发牌 🎴"}
-          </button>
+          {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
         </div>
-
-        {isRolling && <div style={styles.rollingStatus}>买定离手...</div>}
+        
+        {/* 将历史记录包裹在一个浅色背景的区域中以增加层次感 */}
+        <div style={styles.historyWrapper}>
+          <HistoryRecord history={history} styles={styles} />
+        </div>
       </div>
-      <HistoryRecord history={history} styles={styles} />
     </div>
   );
 };
 
 const styles = {
   container: {
+    width: "100vw",
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-    padding: "clamp(10px, 3vw, 20px)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 0,
+    padding: "20px",
+    boxSizing: "border-box",
+    background: "linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #14b8a6 100%)",
+    userSelect: "none",
     fontFamily: "system-ui, -apple-system, sans-serif",
   },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "clamp(15px, 4vw, 30px)",
-    gap: "10px",
+  innerCard: {
+    background: "white",
+    borderRadius: "16px",
+    boxShadow: "0 25px 50px rgba(0, 0, 0, 0.25)",
+    padding: "32px",
+    textAlign: "center",
+    position: "relative",
+    width: "100%",
+    maxWidth: "800px",
+    maxHeight: "95vh",
+    overflowY: "auto",
   },
   backBtn: {
-    padding: "clamp(8px, 2vw, 10px) clamp(12px, 3vw, 20px)",
-    fontSize: "clamp(14px, 3.5vw, 16px)",
-    backgroundColor: "#fff",
+    position: "absolute",
+    top: "10px",
+    left: "10px",
+    fontSize: "14px",
+    padding: "4px 8px",
+    background: "transparent",
     border: "none",
-    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: "600",
-    transition: "all 0.3s",
-    whiteSpace: "nowrap",
+    color: "#1f2937",
+    fontWeight: "500",
   },
   title: {
     fontSize: "clamp(20px, 5vw, 28px)",
-    color: "#fff",
-    margin: 0,
-    textAlign: "center",
-    flex: 1,
-  },
-  spacer: {
-    width: "clamp(60px, 15vw, 100px)",
+    fontWeight: "bold",
+    color: "#1f2937",
+    margin: "0 0 24px 0",
+    textShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
   },
   gameArea: {
-    maxWidth: "800px",
+    width: "100%",
     margin: "0 auto",
     textAlign: "center",
   },
@@ -238,7 +252,8 @@ const styles = {
     height: "clamp(85px, 22vw, 170px)",
     backgroundColor: "#fff",
     borderRadius: "clamp(6px, 1.5vw, 12px)",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    border: "1px solid #e5e7eb",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -259,13 +274,13 @@ const styles = {
     fontWeight: "bold",
   },
   resultBox: {
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "#f8fafc",
     borderRadius: "clamp(12px, 3vw, 16px)",
     padding: "clamp(15px, 4vw, 25px)",
     margin: "clamp(20px, 4vw, 30px) auto",
     maxWidth: "500px",
     border: "3px solid",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
   },
   resultName: {
     fontSize: "clamp(24px, 6vw, 32px)",
@@ -316,13 +331,22 @@ const styles = {
     backgroundColor: "#6b7280",
     cursor: "not-allowed",
     opacity: 0.7,
+    boxShadow: "none",
   },
   rollingStatus: {
     marginTop: "clamp(15px, 3vw, 20px)",
     fontSize: "clamp(16px, 4vw, 20px)",
-    color: "#fbbf24",
+    color: "#d97706",
     fontWeight: "bold",
     animation: "pulse 1s ease-in-out infinite",
+  },
+  historyWrapper: {
+    marginTop: "32px",
+    padding: "20px",
+    background: "#f9fafb",
+    borderRadius: "12px",
+    border: "1px solid #e5e7eb",
+    textAlign: "left",
   }
 };
 
