@@ -1,133 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-// 安全保护Hook
-const useSecurityProtection = () => {
-  useEffect(() => {
-    // 1. 禁用右键菜单
-    const disableContextMenu = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // 2. 禁用开发者工具快捷键
-    const disableDevTools = (e) => {
-      // F12
-      if (e.keyCode === 123) {
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+Shift+I / Cmd+Option+I
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 73) {
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+Shift+C / Cmd+Option+C
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 67) {
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+Shift+J / Cmd+Option+J
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 74) {
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+U / Cmd+U (查看源代码)
-      if ((e.ctrlKey || e.metaKey) && e.keyCode === 85) {
-        e.preventDefault();
-        return false;
-      }
-    };
-
-    // 3. 检测开发者工具
-    const detectDevTools = () => {
-      const threshold = 160;
-      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-      
-      if (widthThreshold || heightThreshold) {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:24px;color:#dc2626;">⚠️ 检测到非法操作，页面已锁定</div>';
-      }
-    };
-
-    // 4. 禁用选择和复制
-    const disableSelection = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    document.addEventListener('contextmenu', disableContextMenu);
-    document.addEventListener('keydown', disableDevTools);
-    document.addEventListener('selectstart', disableSelection);
-    document.addEventListener('copy', disableSelection);
-
-    // 定期检测开发者工具（每秒检测一次）
-    const devToolsInterval = setInterval(detectDevTools, 1000);
-
-    // 5. 混淆console.log输出
-    const originalLog = console.log;
-    console.log = function(...args) {
-      // 在生产环境中完全禁用或输出混淆信息
-      originalLog.apply(console, ['[已屏蔽]']);
-    };
-
-    return () => {
-      document.removeEventListener('contextmenu', disableContextMenu);
-      document.removeEventListener('keydown', disableDevTools);
-      document.removeEventListener('selectstart', disableSelection);
-      document.removeEventListener('copy', disableSelection);
-      clearInterval(devToolsInterval);
-      console.log = originalLog;
-    };
-  }, []);
-};
-
-// 数据加密工具
-const encryptData = (data) => {
-  // 简单的Base64编码 + 字符串反转
-  const jsonStr = JSON.stringify(data);
-  const base64 = btoa(encodeURIComponent(jsonStr));
-  return base64.split('').reverse().join('');
-};
-
-const decryptData = (encrypted) => {
-  try {
-    const base64 = encrypted.split('').reverse().join('');
-    const jsonStr = decodeURIComponent(atob(base64));
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    return null;
-  }
-};
-
-// 受保护的localStorage包装器
-const secureStorage = {
-  setItem: (key, value) => {
-    const encrypted = encryptData(value);
-    const timestamp = Date.now();
-    const hash = btoa(`${key}_${timestamp}_${Math.random()}`);
-    localStorage.setItem(`sec_${key}`, encrypted);
-    localStorage.setItem(`sec_${key}_hash`, hash);
-  },
-  
-  getItem: (key) => {
-    const encrypted = localStorage.getItem(`sec_${key}`);
-    const hash = localStorage.getItem(`sec_${key}_hash`);
-    
-    if (!encrypted || !hash) return null;
-    
-    return decryptData(encrypted);
-  },
-  
-  removeItem: (key) => {
-    localStorage.removeItem(`sec_${key}`);
-    localStorage.removeItem(`sec_${key}_hash`);
-  }
-};
-
-// 受保护的转盘组件
 const ProtectedLuckyWheel = ({ onBack }) => {
-  useSecurityProtection();
-  
   const [isFlag, setIsFlag] = useState(true);
   const [result, setResult] = useState('');
   const [rotation, setRotation] = useState(0);
@@ -135,50 +8,28 @@ const ProtectedLuckyWheel = ({ onBack }) => {
   const [showModal, setShowModal] = useState(false);
   const [gameHistory, setGameHistory] = useState([]);
 
-  // 使用加密存储
-  const prize = [
-    '保底增加488w',
-    '保底增加788w',
-    '288小金单',
-    '388爽吃大保险单',
-    '1111.11现金红包',
-    '非洲之心不出不结单',
-  ];
-
+  // Visual configuration only. Logic is on the backend.
   const prizeConfig = [
-    { weight: 70, angle: 0, name: prize[0] },
-    { weight: 24, angle: 60, name: prize[1] },
-    { weight: 4, angle: 120, name: prize[2] },
-    { weight: 1, angle: 180, name: prize[3] },
-    { weight: 0, angle: 240, name: prize[4] },
-    { weight: 0, angle: 300, name: prize[5] },
+    { angle: 0, name: '保底增加488w' },
+    { angle: 60, name: '保底增加788w' },
+    { angle: 120, name: '288小金单' },
+    { angle: 180, name: '388爽吃大保险单' },
+    { angle: 240, name: '1111.11现金红包' },
+    { angle: 300, name: '非洲之心不出不结单' },
   ];
-
-  const weightedRandom = () => {
-    const weights = prizeConfig.map(p => p.weight);
-    const sum = weights.reduce((a, b) => a + b, 0);
-    const rand = Math.random() * sum;
-    let total = 0;
-    for (let i = 0; i < weights.length; i++) {
-      total += weights[i];
-      if (rand < total) return i;
-    }
-    return prizeConfig.length - 1;
-  };
 
   const STORAGE_KEY_HISTORY = 'luckywheel_history';
+  const STORAGE_KEY_TIME = 'luckywheel_last_spin';
 
   const loadGameHistory = useCallback(() => {
-    const encrypted = localStorage.getItem(STORAGE_KEY_HISTORY);
-    if (!encrypted) {
-      setGameHistory([]);
-      return;
-    }
-
-    const decrypted = decryptData(encrypted);
-    if (Array.isArray(decrypted)) {
-      setGameHistory(decrypted.slice(0, 10)); // 最多10条
-    } else {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_HISTORY);
+      if (stored) {
+        setGameHistory(JSON.parse(stored).slice(0, 10));
+      } else {
+        setGameHistory([]);
+      }
+    } catch (e) {
       setGameHistory([]);
     }
   }, []);
@@ -192,57 +43,39 @@ const ProtectedLuckyWheel = ({ onBack }) => {
       timestamp: now.getTime(),
     };
 
-    // 加载现有记录
-    const encrypted = localStorage.getItem(STORAGE_KEY_HISTORY);
     let history = [];
-    if (encrypted) {
-      const decrypted = decryptData(encrypted);
-      if (Array.isArray(decrypted)) history = decrypted;
-    }
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_HISTORY);
+      if (stored) history = JSON.parse(stored);
+    } catch (e) {}
 
-    // 添加新记录到最前面
     history.unshift(newRecord);
-
-    // 限制最多10条
     const limited = history.slice(0, 10);
-
-    // 加密保存
-    const encryptedNew = encryptData(limited);
-    localStorage.setItem(STORAGE_KEY_HISTORY, encryptedNew);
-
+    
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(limited));
     setGameHistory(limited);
   }, []);
 
-  const run = (targetIndex) => {
-    // === 关键修复：拦截权重为0的奖品 ===
-    if (prizeConfig[targetIndex].weight === 0) {
-      console.error('非法中奖尝试：', prizeConfig[targetIndex].name);
-      alert('系统检测到异常操作，抽奖已取消！');
-      setIsFlag(true);
-      return;
-    }
-  
-    setIsFlag(false);
+  const runAnimation = (targetIndex, prizeName) => {
     const middleAngle = prizeConfig[targetIndex].angle + 30;
     let alpha = (270 - middleAngle + 360) % 360;
     const rounds = 5 + Math.floor(Math.random() * 4);
     const totalAngle = rounds * 360 + alpha;
+    
     setRotation(totalAngle);
   
     setTimeout(() => {
-      setResult(prizeConfig[targetIndex].name);
+      setResult(prizeName);
       setIsFlag(true);
-      
-      // 保存开奖记录
-      saveDrawRecord(prizeConfig[targetIndex].name);
+      saveDrawRecord(prizeName);
     }, 4000);
   };
 
   const updateRemaining = () => {
-    const lastSpin = secureStorage.getItem('lastSpinTime');
+    const lastSpin = localStorage.getItem(STORAGE_KEY_TIME);
     if (lastSpin) {
       const diff = Date.now() - parseInt(lastSpin);
-      const lockDuration = 24 * 60 * 60 * 1000;
+      const lockDuration = 24 * 60 * 60 * 1000; // 24 hours
       if (diff < lockDuration) {
         setRemainingTime(lockDuration - diff);
       } else {
@@ -260,12 +93,38 @@ const ProtectedLuckyWheel = ({ onBack }) => {
     return () => clearInterval(interval);
   }, [loadGameHistory]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!isFlag || remainingTime !== null) return;
-    const index = weightedRandom();
-    secureStorage.setItem('lastSpinTime', Date.now().toString());
-    updateRemaining();
-    run(index);
+    
+    setIsFlag(false);
+    
+    try {
+      // Call backend to determine the prize
+      const response = await fetch('/.netlify/functions/spinWheel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      
+      // Temporary client-side cooldown lock
+      localStorage.setItem(STORAGE_KEY_TIME, Date.now().toString());
+      updateRemaining();
+      
+      // Execute UI rotation
+      runAnimation(data.index, data.prizeName);
+
+    } catch (error) {
+      console.error('抽奖失败:', error);
+      alert('服务器连接失败，请稍后再试。');
+      setIsFlag(true);
+    }
   };
 
   const colors = ['#77ddff', '#00ddaa', '#ffff33', '#d28eff', '#ffdd55', '#ff88c2'];
@@ -491,7 +350,6 @@ const ProtectedLuckyWheel = ({ onBack }) => {
           查看公示
         </button>
 
-        {/* 开奖记录 */}
         <div style={{
           marginTop: '32px',
           padding: '20px',
